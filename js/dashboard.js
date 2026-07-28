@@ -61,6 +61,14 @@ const Dashboards = {
         }
       </div>
     `;
+
+    if (user.bookmarks.length > 0) {
+      FLUTTER_DATA.components
+        .filter(c => user.bookmarks.includes(c.id))
+        .forEach(c => {
+          if (c.simType) FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
+        });
+    }
   },
 
   renderAdminDashboard: function() {
@@ -162,3 +170,6 @@ const Dashboards = {
     `;
   }
 };
+
+const DashboardRenderer = Dashboards;
+

@@ -61,6 +61,24 @@ const FlutterSim = {
         `;
         break;
 
+      case 'checkout_preview':
+        el.innerHTML = `
+          <div style="width:100%; max-width:320px; background:#0f172a; padding:16px; border-radius:18px; border:1px solid rgba(56,189,248,0.3); color:#fff; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:700; font-size:14px; color:#38bdf8;">💳 Modern Checkout</span>
+              <span style="font-size:11px; background:rgba(16,185,129,0.2); color:#10b981; padding:2px 8px; border-radius:12px; font-weight:700;">PRO</span>
+            </div>
+            <div style="background:#1e293b; padding:10px; border-radius:10px; font-size:12px;">
+              <div style="color:#94a3b8; font-size:10px;">Item Total</div>
+              <div style="font-weight:800; font-size:16px;">₹1,499.00</div>
+            </div>
+            <button style="background:linear-gradient(135deg, #0284c7, #8b5cf6); border:none; color:#fff; padding:10px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer;">
+              Pay Now (Instant)
+            </button>
+          </div>
+        `;
+        break;
+
       case 'dock_menu':
         el.innerHTML = `
           <div style="
@@ -132,6 +150,108 @@ const FlutterSim = {
             <div style="display:flex; align-items:center; gap:10px;">
               <div style="width:24px; height:24px; border-radius:50%; background:#38bdf8; color:#000; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;">🚚</div>
               <div style="font-size:13px; color:#38bdf8; font-weight:600;">Out for Delivery</div>
+            </div>
+          </div>
+        `;
+        break;
+
+      // ----------------------------------------------------------------------
+      // DESIGN SYSTEMS SHOWCASE SIMULATION CASES
+      // ----------------------------------------------------------------------
+      case 'bento_card':
+      case 'bento_stats':
+      case 'bento_grid':
+      case 'bento_analytics':
+      case 'bento_pricing':
+        el.innerHTML = `
+          <div class="bento-card" style="width:100%; max-width:320px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span style="font-size:12px; font-weight:700; color:#818cf8; text-transform:uppercase;">🍱 Bento UI System</span>
+              <span style="background:rgba(99,102,241,0.2); color:#818cf8; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">HIGH DENSITY</span>
+            </div>
+            <div style="font-size:16px; font-weight:800; color:#fff; margin-bottom:6px;">Modular Telemetry Card</div>
+            <div style="font-size:12px; color:#94a3b8; margin-bottom:14px;">Asymmetric 4-span layout block with live ARR telemetry trends.</div>
+            <div style="display:flex; align-items:baseline; gap:8px; background:#1e1b4b; padding:10px; border-radius:12px;">
+              <span style="font-size:20px; font-weight:800; color:#fff;">₹4,85,000</span>
+              <span style="color:#34d399; font-size:12px; font-weight:700;">+28.4% ↑</span>
+            </div>
+          </div>
+        `;
+        break;
+
+      case 'neu_button':
+      case 'neu_login':
+      case 'neu_player':
+      case 'neu_toggle':
+      case 'neu_card':
+        el.innerHTML = `
+          <div class="neu-card" style="width:100%; max-width:320px; text-align:center;">
+            <div style="font-size:12px; font-weight:700; color:#38bdf8; margin-bottom:8px;">🔘 Neumorphism Tactile</div>
+            <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:16px;">Soft Extruded Surface</div>
+            <div style="display:flex; justify-content:center; gap:12px; margin-bottom:14px;">
+              <button class="neu-button">◀</button>
+              <button class="neu-button" style="background:#38bdf8; color:#0f172a; box-shadow:none;">▶ PLAY</button>
+              <button class="neu-button">▶</button>
+            </div>
+            <span style="font-size:11px; color:#64748b;">Dual light-source soft plastic depth</span>
+          </div>
+        `;
+        break;
+
+      case 'clay_button':
+      case 'clay_profile':
+      case 'clay_dashboard':
+      case 'clay_pricing':
+      case 'clay_card':
+        el.innerHTML = `
+          <div class="clay-card" style="width:100%; max-width:320px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span style="font-size:12px; font-weight:800; color:#fff;">🎨 Claymorphism 3D</span>
+              <span style="background:rgba(255,255,255,0.25); color:#fff; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;">PUFFY 3D</span>
+            </div>
+            <div style="font-size:18px; font-weight:800; margin-bottom:6px;">Inflated 3D Surface</div>
+            <div style="font-size:12px; opacity:0.9; margin-bottom:16px;">Vibrant rounded shapes with inner highlight light sources.</div>
+            <button style="width:100%; background:#ffffff; color:#ec4899; border:none; padding:10px; border-radius:16px; font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 8px 16px rgba(0,0,0,0.2);">
+              Interactive 3D Clay Action
+            </button>
+          </div>
+        `;
+        break;
+
+      case 'glass_login':
+      case 'glass_sidebar':
+      case 'glass_navbar':
+      case 'glass_profile':
+        el.innerHTML = `
+          <div class="glass-showcase-card" style="width:100%; max-width:320px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span style="font-size:12px; font-weight:700; color:#10b981;">💎 Glassmorphism System</span>
+              <span style="background:rgba(16,185,129,0.2); color:#10b981; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">FROSTED</span>
+            </div>
+            <div style="font-size:16px; font-weight:800; color:#fff; margin-bottom:6px;">Frosted Glass Card</div>
+            <div style="font-size:12px; color:#94a3b8; margin-bottom:14px;">Backdrop blur filter (16px) with semi-transparent neon glow border.</div>
+            <input type="text" value="dev@flutterhub.dev" readonly style="width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:8px 12px; border-radius:10px; font-size:12px;" />
+          </div>
+        `;
+        break;
+
+      case 'aurora_hero':
+      case 'aurora_cta':
+      case 'aurora_pricing':
+      case 'aurora_dashboard':
+      case 'aurora_pill':
+        el.innerHTML = `
+          <div class="aurora-card" style="width:100%; max-width:320px;">
+            <div style="position:relative; z-index:2;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:12px; font-weight:700; color:#a855f7;">🌌 Aurora UI Engine</span>
+                <span style="background:rgba(168,85,247,0.25); color:#a855f7; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">MESH GLOW</span>
+              </div>
+              <div style="font-size:16px; font-weight:800; color:#fff; margin-bottom:6px;">Ambient Mesh Glow</div>
+              <div style="font-size:12px; color:#94a3b8; margin-bottom:14px;">Multi-color animated radial light aura with floating particle illumination.</div>
+              <div style="background:rgba(168,85,247,0.2); border:1px solid rgba(168,85,247,0.5); padding:8px; border-radius:12px; text-align:center; color:#fff; font-weight:700; font-size:12px;">
+                Explore Aurora Glow
+              </div>
             </div>
           </div>
         `;
