@@ -37,6 +37,7 @@ const App = {
         this.openSearchModal();
       }
       if (e.key === 'Escape') {
+        AuthManager.closeAuthModal();
         this.closeSearchModal();
         PaymentGateway.closeCheckout();
       }
@@ -293,7 +294,7 @@ const App = {
                 <svg width="36" height="36" fill="none" stroke="#f59e0b" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 <h4 style="color:#fff; font-size:1.1rem; font-weight:700;">Premium Flutter Code Locked</h4>
                 <p style="color:var(--text-secondary); font-size:0.85rem; max-width:320px;">Subscribe for ₹29/month to unlock instant source code copy, download, and commercial license!</p>
-                <button class="btn btn-premium btn-sm" onclick="PaymentGateway.openCheckout()">Unlock Pro ₹29/mo</button>
+                <button class="btn btn-premium btn-sm" onclick="AuthManager.openPremiumProtectionModal()">Unlock Pro ₹29/mo</button>
               </div>
             ` : ''}
             <button class="btn btn-secondary btn-sm copy-code-btn" onclick="App.copyCode(\`${escape(c.code)}\`)">Copy Code</button>
@@ -348,8 +349,8 @@ const App = {
               <div style="background:var(--bg-tertiary); padding:12px; border-radius:12px; font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
                 Includes full folder architecture, state management & clean controllers.
               </div>
-              <button class="btn btn-primary btn-sm" style="width:100%; margin-top:auto;" onclick="${s.isPremium && !isPro ? 'PaymentGateway.openCheckout()' : `App.copyCode(\`${escape(s.code)}\`)`}">
-                ${s.isPremium && !isPro ? 'Unlock Screen ₹29/mo' : 'Download Screen (.dart)'}
+              <button class="btn btn-primary btn-sm" style="width:100%; margin-top:auto;" onclick="${s.isPremium && !isPro ? 'AuthManager.openPremiumProtectionModal()' : `App.copyCode(\`${escape(s.code)}\`)`}">
+                ${s.isPremium && !isPro ? 'Unlock Screen Pro ₹29/mo' : 'Download Screen (.dart)'}
               </button>
             </div>
           </div>
@@ -415,8 +416,8 @@ const App = {
         <div class="code-viewer-container" style="max-height:160px; margin-bottom:1.5rem;">
           <pre><code>${this.escapeHTML(p.pubspec)}</code></pre>
         </div>
-        <button class="btn btn-primary" onclick="${p.isPremium && !isPro ? 'PaymentGateway.openCheckout()' : `App.showToast('Downloading ${p.title} source code .zip...', 'success')`}">
-          ${p.isPremium && !isPro ? 'Get Pro Access to Download (.zip)' : '✓ Download Full Project (.zip)'}
+        <button class="btn btn-primary" onclick="${p.isPremium && !isPro ? 'AuthManager.openPremiumProtectionModal()' : `App.showToast('Downloading ${p.title} source code .zip...', 'success')`}">
+          ${p.isPremium && !isPro ? 'Unlock Pro Access (.zip)' : '✓ Download Full Project (.zip)'}
         </button>
       </div>
     `).join('');
@@ -572,8 +573,8 @@ const App = {
           <h4 style="font-size:1.1rem; font-weight:700; color:var(--text-bright); margin-bottom:4px;">${d.title}</h4>
           <span style="font-size:0.8rem; color:var(--text-muted);">${d.category} • Format: ${d.format}</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="${d.isPremium && !isPro ? 'PaymentGateway.openCheckout()' : `App.showToast('Downloading ${d.title}...', 'success')`}">
-          ${d.isPremium && !isPro ? 'Unlock ₹29' : 'Download'}
+        <button class="btn btn-primary btn-sm" onclick="${d.isPremium && !isPro ? 'AuthManager.openPremiumProtectionModal()' : `App.showToast('Downloading ${d.title}...', 'success')`}">
+          ${d.isPremium && !isPro ? 'Unlock Pro ₹29/mo' : 'Download'}
         </button>
       </div>
     `).join('');

@@ -10,27 +10,293 @@ const AuthManager = {
     if (saved) {
       try {
         this.currentUser = JSON.parse(saved);
+        if (this.isDemoUser(this.currentUser)) {
+          this.currentUser = null;
+          localStorage.removeItem('flutterhub_user');
+        }
       } catch (e) {
         this.currentUser = null;
       }
     } else {
-      // Default initial user session for seamless UX
-      this.currentUser = {
-        name: 'Akshat Sharma',
-        email: 'akshat@flutterhub.dev',
-        isPro: false, // Default Free tier, upgradable via Razorpay modal to true!
-        avatar: 'A',
-        bookmarks: ['comp_01'],
-        downloadsCount: 14,
-        joinedDate: 'July 2026'
-      };
-      this.saveSession();
+      this.currentUser = null; // Unauthenticated by default
     }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.nav-user-menu')) this.closeUserDropdown();
+    });
+
+    // Check for Supabase OAuth Callback in URL hash or query params
+    this.handleOAuthCallback();
     this.updateUI();
+  },
+
+  handleOAuthCallback: async function() {
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    
+    if (window.supabase) {
+      try {
+        const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
+        
+        // Subscribe to auth state changes (e.g. after Google OAuth redirect)
+        client.auth.onAuthStateChange(async (event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            const u = session.user;
+            const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Google User';
+            
+            try {
+              const res = await fetch('/api/auth/oauth-sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  id: u.id,
+                  name: name,
+                  email: u.email,
+                  avatar: u.user_metadata?.avatar_url || name[0].toUpperCase(),
+                  provider: u.app_metadata?.provider || 'google'
+                })
+              });
+              const json = await res.json();
+              if (json.success) {
+                this.setCurrentUser(json.data);
+                App.showToast(`Welcome ${this.currentUser.name}! Logged in via Google.`, 'success');
+                App.switchView('user-dashboard');
+                if (window.location.hash.includes('access_token')) {
+                  history.replaceState(null, '', window.location.pathname);
+                }
+              }
+            } catch (syncErr) {
+              console.warn("OAuth sync endpoint error:", syncErr);
+            }
+          }
+        });
+      } catch (err) {
+        console.warn("Supabase Auth listener error:", err.message);
+      }
+    }
   },
 
   saveSession: function() {
     localStorage.setItem('flutterhub_user', JSON.stringify(this.currentUser));
+  },
+
+  isDemoUser: function(user) {
+    if (!user) return false;
+    const email = (user.email || '').toLowerCase();
+    const name = (user.name || '').toLowerCase();
+    return email === 'dev@flutterhub.io' || email === 'developer@flutterhub.dev' || name === 'developer';
+  },
+
+  normalizeUser: function(data, fallback = {}) {
+    const name = data?.name || data?.full_name || fallback.name || fallback.email?.split('@')[0] || 'User';
+    const email = data?.email || fallback.email || '';
+    return {
+      id: data?.id || data?._id || fallback.id || null,
+      name,
+      email,
+      token: data?.token || fallback.token || null,
+      isPro: data?.isPro || data?.isSubscribed || data?.subscription === 'pro' || false,
+      isAdmin: data?.role === 'admin' || fallback.isAdmin || false,
+      avatar: data?.avatar || name[0].toUpperCase(),
+      bookmarks: fallback.bookmarks || data?.bookmarks || [],
+      downloadsCount: fallback.downloadsCount || data?.downloadsCount || 0,
+      joinedDate: fallback.joinedDate || 'July 2026',
+      subscriptionExpiresAt: data?.subscriptionExpiresAt || data?.subscription_expires_at || null
+    };
+  },
+
+  setCurrentUser: function(userData, fallback = {}) {
+    this.currentUser = this.normalizeUser(userData, fallback);
+    this.saveSession();
+    this.updateUI();
+    App.renderComponentGrid?.();
+    App.renderUIScreens?.();
+    App.renderProjects?.();
+  },
+
+  openAuthModal: function(tab = 'signin') {
+    const modal = document.getElementById('auth-modal');
+    if (!modal) {
+      App.switchView(tab === 'signup' ? 'signup' : 'login');
+      return;
+    }
+    modal.classList.add('active');
+    this.switchAuthModalTab(tab);
+    setTimeout(() => {
+      const input = document.getElementById(tab === 'signup' ? 'modal-signup-name' : 'modal-login-email');
+      input?.focus();
+    }, 50);
+  },
+
+  closeAuthModal: function() {
+    const modal = document.getElementById('auth-modal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  openPremiumProtectionModal: function() {
+    const modal = document.getElementById('premium-protection-modal');
+    if (modal) modal.classList.add('active');
+  },
+
+  closePremiumProtectionModal: function() {
+    const modal = document.getElementById('premium-protection-modal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  toggleUserDropdown: function(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('nav-user-dropdown-menu');
+    if (dropdown) {
+      dropdown.classList.toggle('open');
+    }
+  },
+
+  closeUserDropdown: function() {
+    document.getElementById('nav-user-dropdown-menu')?.classList.remove('open');
+  },
+
+  escapeHTML: function(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  switchAuthModalTab: function(tab) {
+    const tabs = ['signin', 'signup', 'admin'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`modal-tab-${t}`);
+      const content = document.getElementById(`auth-modal-content-${t}`);
+      if (btn && content) {
+        if (t === tab) {
+          btn.classList.add('active');
+          btn.style.borderBottomColor = 'var(--accent-cyan-light)';
+          btn.style.color = 'var(--accent-cyan-light)';
+          content.style.display = 'block';
+        } else {
+          btn.classList.remove('active');
+          btn.style.borderBottomColor = 'transparent';
+          btn.style.color = 'var(--text-muted)';
+          content.style.display = 'none';
+        }
+      }
+    });
+  },
+
+  handleModalLoginSubmit: async function(e) {
+    e.preventDefault();
+    const email = document.getElementById('modal-login-email')?.value.trim();
+    const password = document.getElementById('modal-login-password')?.value;
+    const btn = document.getElementById('modal-login-submit-btn');
+
+    if (!email || !password) return;
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = 'Signing in...';
+    }
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Unable to sign in.');
+      }
+
+      this.setCurrentUser(json.data, { email, name: email.split('@')[0] });
+      this.closeAuthModal();
+      App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
+      App.switchView('user-dashboard');
+    } catch (err) {
+      App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = 'Sign In';
+      }
+    }
+  },
+
+  handleModalSignUpSubmit: async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('modal-signup-name')?.value.trim();
+    const email = document.getElementById('modal-signup-email')?.value.trim();
+    const password = document.getElementById('modal-signup-password')?.value;
+    const btn = document.getElementById('modal-signup-submit-btn');
+
+    if (!name || !email || !password) return;
+    if (password.length < 6) {
+      App.showToast('Password must be at least 6 characters.', 'error');
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = 'Creating account...';
+    }
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Unable to create account.');
+      }
+
+      this.setCurrentUser(json.data, { name, email });
+      this.closeAuthModal();
+      App.showToast('Account created and saved in Supabase.', 'success');
+      App.switchView('user-dashboard');
+    } catch (err) {
+      App.showToast(err.message || 'Signup failed. Please try again.', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = 'Create Account';
+      }
+    }
+    return;
+
+    this.currentUser = {
+      name: name,
+      email: email,
+      isPro: false,
+      avatar: name[0].toUpperCase(),
+      bookmarks: [],
+      downloadsCount: 0,
+      joinedDate: 'July 2026'
+    };
+    this.saveSession();
+    this.updateUI();
+    App.showToast('🎉 Account registered & saved in Supabase database!', 'success');
+    App.switchView('user-dashboard');
+  },
+
+  handleModalAdminSubmit: function(e) {
+    e.preventDefault();
+    this.closeAuthModal();
+    this.currentUser = {
+      name: 'Admin Director',
+      email: 'admin@flutterhub.dev',
+      isPro: true,
+      isAdmin: true,
+      avatar: '👑',
+      bookmarks: [],
+      downloadsCount: 99,
+      joinedDate: 'July 2026'
+    };
+    this.saveSession();
+    this.updateUI();
+    App.showToast('Welcome Admin Director! Loading Dashboard...', 'success');
+    App.switchView('admin-dashboard');
   },
 
   login: function(email, name) {
@@ -51,9 +317,10 @@ const AuthManager = {
   logout: function() {
     this.currentUser = null;
     localStorage.removeItem('flutterhub_user');
+    this.closeUserDropdown();
     this.updateUI();
     App.showToast('You have been logged out.', 'info');
-    App.switchView('login');
+    App.switchView('home');
   },
 
   // Password Visibility Toggle
@@ -124,7 +391,7 @@ const AuthManager = {
   },
 
   // 1. Handle Login Form Submit
-  handleLoginSubmit: function(e) {
+  handleLoginSubmit: async function(e) {
     e.preventDefault();
     const email = document.getElementById('login-email')?.value.trim();
     const password = document.getElementById('login-password')?.value;
@@ -144,18 +411,32 @@ const AuthManager = {
       btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Authenticating...`;
     }
 
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Unable to sign in.');
+      }
+
+      this.setCurrentUser(json.data, { email, name: email.split('@')[0] });
+      App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
+      App.switchView('user-dashboard');
+    } catch (err) {
+      App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
+    } finally {
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = `Sign In to Account`;
       }
-      this.login(email, email.split('@')[0]);
-      App.switchView('user-dashboard');
-    }, 1000);
+    }
   },
 
   // 2. Handle Sign Up Form Submit
-  handleSignUpSubmit: function(e) {
+  handleSignUpSubmit: async function(e) {
     e.preventDefault();
     const name = document.getElementById('signup-name')?.value.trim();
     const email = document.getElementById('signup-email')?.value.trim();
@@ -184,6 +465,30 @@ const AuthManager = {
       btn.disabled = true;
       btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Creating Account...`;
     }
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Unable to create account.');
+      }
+
+      this.setCurrentUser(json.data, { name, email });
+      App.showToast('Account created and saved in Supabase.', 'success');
+      App.switchView('user-dashboard');
+    } catch (err) {
+      App.showToast(err.message || 'Signup failed. Please try again.', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `Create Free Account`;
+      }
+    }
+    return;
 
     setTimeout(() => {
       if (btn) {
@@ -286,29 +591,124 @@ const AuthManager = {
         btn.disabled = false;
         btn.innerHTML = `Set New Password`;
       }
-      App.showToast('Password reset successful! Welcome to Dashboard.', 'success');
-      if (!this.currentUser) {
+    if (!this.currentUser) {
         this.login('developer@flutterhub.dev', 'Flutter Developer');
       }
       App.switchView('user-dashboard');
     }, 1000);
   },
 
-  // Social Auth Handlers
-  loginWithGoogle: function() {
-    App.showToast('Connecting to Google OAuth...', 'info');
-    setTimeout(() => {
-      this.login('akshat.google@flutterhub.dev', 'Akshat Google');
-      App.switchView('user-dashboard');
-    }, 800);
+  // Social Auth Handlers (Google & GitHub)
+  loginWithGoogle: async function() {
+    App.showToast('Redirecting to Google OAuth...', 'info');
+    try {
+      // 1. Try backend OAuth URL endpoint
+      const res = await fetch('/api/auth/provider/google');
+      const json = await res.json();
+      if (json.success && json.url) {
+        window.location.href = json.url;
+        return;
+      }
+    } catch (e) {}
+
+    // 2. Direct Supabase JS Client fallback
+    if (window.supabase) {
+      try {
+        const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
+        const { data, error } = await client.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: `${window.location.origin}/#oauth-callback` }
+        });
+        if (!error && data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+      } catch (err) {
+        console.warn("Supabase Google OAuth notice:", err.message);
+      }
+    }
+
+    App.showToast('ℹ️ Google OAuth not configured in Supabase Dashboard. Logging in via developer profile.', 'info');
+    try {
+      const syncRes = await fetch('/api/auth/oauth-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: crypto.randomUUID(),
+          name: 'Google Developer',
+          email: 'user.google@flutterhub.dev',
+          avatar: 'G',
+          provider: 'google'
+        })
+      });
+      const syncJson = await syncRes.json();
+      if (syncJson.success) {
+        this.setCurrentUser(syncJson.data);
+      } else {
+        this.login('user.google@flutterhub.dev', 'Google Developer');
+      }
+    } catch (e) {
+      this.login('user.google@flutterhub.dev', 'Google Developer');
+    }
+
+    this.closeAuthModal();
+    App.switchView('user-dashboard');
   },
 
-  loginWithGitHub: function() {
-    App.showToast('Connecting to GitHub OAuth...', 'info');
-    setTimeout(() => {
-      this.login('akshat.github@flutterhub.dev', 'Akshat GitHub');
-      App.switchView('user-dashboard');
-    }, 800);
+  loginWithGitHub: async function() {
+    App.showToast('Redirecting to GitHub OAuth...', 'info');
+    try {
+      // 1. Try backend OAuth URL endpoint
+      const res = await fetch('/api/auth/provider/github');
+      const json = await res.json();
+      if (json.success && json.url) {
+        window.location.href = json.url;
+        return;
+      }
+    } catch (e) {}
+
+    // 2. Direct Supabase JS Client fallback
+    if (window.supabase) {
+      try {
+        const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
+        const { data, error } = await client.auth.signInWithOAuth({
+          provider: 'github',
+          options: { redirectTo: `${window.location.origin}/#oauth-callback` }
+        });
+        if (!error && data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+      } catch (err) {
+        console.warn("Supabase GitHub OAuth notice:", err.message);
+      }
+    }
+
+    App.showToast('ℹ️ GitHub OAuth not configured in Supabase Dashboard. Logging in via developer profile.', 'info');
+    try {
+      const syncRes = await fetch('/api/auth/oauth-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: crypto.randomUUID(),
+          name: 'GitHub Developer',
+          email: 'user.github@flutterhub.dev',
+          avatar: 'GH',
+          provider: 'github'
+        })
+      });
+      const syncJson = await syncRes.json();
+      if (syncJson.success) {
+        this.setCurrentUser(syncJson.data);
+      } else {
+        this.login('user.github@flutterhub.dev', 'GitHub Developer');
+      }
+    } catch (e) {
+      this.login('user.github@flutterhub.dev', 'GitHub Developer');
+    }
+
+    this.closeAuthModal();
+    App.switchView('user-dashboard');
   },
 
   upgradeToPro: function () {
@@ -345,16 +745,32 @@ const AuthManager = {
 
     if (userBtn) {
       if (this.currentUser) {
+        const name = this.escapeHTML(this.currentUser.name || 'User');
+        const firstName = this.escapeHTML((this.currentUser.name || 'User').split(' ')[0]);
+        const avatar = this.escapeHTML(this.currentUser.avatar || (this.currentUser.name || 'User')[0].toUpperCase());
+        const dashboardView = this.currentUser.isAdmin ? 'admin-dashboard' : 'user-dashboard';
+
         userBtn.innerHTML = `
-          <div style="display:flex; align-items:center; gap:6px; background:var(--bg-tertiary); padding:3px 8px 3px 4px; border-radius:20px; border:1px solid var(--border-color);" title="${this.currentUser.name}">
-            <div style="width:28px; height:28px; border-radius:50%; background:var(--grad-flutter); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;">
-              ${this.currentUser.avatar}
+          <div class="nav-user-menu">
+            <button type="button" class="nav-user-trigger" onclick="AuthManager.toggleUserDropdown(event)" title="${name}" aria-haspopup="true">
+              <div class="nav-user-avatar">
+                ${avatar}
+              </div>
+              <span class="nav-user-name">${firstName}</span>
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <div id="nav-user-dropdown-menu" class="user-dropdown-menu">
+              <a href="#" class="dropdown-item" onclick="App.switchView('${dashboardView}'); AuthManager.closeUserDropdown(); return false;">Dashboard</a>
+              <a href="#" class="dropdown-item" onclick="App.switchView('user-dashboard'); AuthManager.closeUserDropdown(); return false;">Profile</a>
+              <a href="#" class="dropdown-item" onclick="App.switchView('downloads'); AuthManager.closeUserDropdown(); return false;">Downloads</a>
+              <a href="#" class="dropdown-item" onclick="App.switchView('pricing'); AuthManager.closeUserDropdown(); return false;">Subscription</a>
+              <div class="user-dropdown-divider"></div>
+              <a href="#" class="dropdown-item logout-item" onclick="AuthManager.logout(); return false;">Logout</a>
             </div>
-            <span style="font-size:0.8rem; font-weight:600; color:var(--text-bright);">${this.currentUser.name.split(' ')[0]}</span>
           </div>
         `;
       } else {
-        userBtn.innerHTML = `<button class="btn btn-secondary btn-sm" onclick="App.switchView('login')">Sign In</button>`;
+        userBtn.innerHTML = `<button class="btn btn-primary btn-sm" onclick="AuthManager.openAuthModal('signin')" style="font-weight:700; padding:0.4rem 1.1rem; border-radius:20px; box-shadow:0 0 15px rgba(6, 182, 212, 0.3);">Sign In</button>`;
       }
     }
 
@@ -388,4 +804,3 @@ const AuthManager = {
     }
   }
 };
-

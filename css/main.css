@@ -453,6 +453,16 @@ body {
   white-space: nowrap;
 }
 
+.dropdown-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-bright);
+}
+
+.logout-item:hover {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--accent-rose);
+}
+
 /* ==========================================================================
    Design System Showcase Styles (Bento, Neumorphism, Claymorphism, Glassmorphism, Aurora UI)
    ========================================================================== */
@@ -579,6 +589,83 @@ body {
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
+}
+
+.nav-user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 150px;
+  background: var(--bg-tertiary);
+  color: var(--text-bright);
+  padding: 4px 12px 4px 6px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  font: inherit;
+}
+
+.nav-user-trigger:hover {
+  border-color: var(--accent-cyan);
+}
+
+.nav-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--grad-flutter);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.nav-user-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 190px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+}
+
+.user-dropdown-menu.open {
+  display: flex;
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+.logout-item {
+  color: var(--accent-rose);
 }
 
 .search-trigger {

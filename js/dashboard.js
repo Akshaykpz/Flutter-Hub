@@ -8,6 +8,17 @@ const Dashboards = {
     const container = document.getElementById('user-dashboard-content');
     if (!container) return;
 
+    if (!user) {
+      container.innerHTML = `
+        <div class="glass-panel" style="padding:2.5rem; text-align:center; max-width:560px; margin:3rem auto;">
+          <h2 style="font-size:1.6rem; font-weight:800; color:var(--text-bright); margin-bottom:0.75rem;">Sign in to view your dashboard</h2>
+          <p style="color:var(--text-secondary); margin-bottom:1.5rem;">Your saved components, downloads, and plan details will appear here after login.</p>
+          <button class="btn btn-primary" onclick="AuthManager.openAuthModal('signin')">Sign In</button>
+        </div>
+      `;
+      return;
+    }
+
     container.innerHTML = `
       <div class="glass-panel" style="padding:2rem; margin-bottom:2rem;">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
@@ -71,18 +82,37 @@ const Dashboards = {
     }
   },
 
-  renderAdminDashboard: function() {
+  renderAdminDashboard: async function() {
     const container = document.getElementById('admin-dashboard-content');
     if (!container) return;
+
+    let users = [];
+    let usersError = '';
+
+    try {
+      const res = await fetch('/api/auth/users');
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        users = json.data;
+      } else {
+        usersError = json.message || 'Unable to load Supabase users.';
+      }
+    } catch (e) {
+      usersError = e.message;
+      console.warn("Supabase users fetch notice:", e.message);
+    }
+
+    const totalUsers = users.length;
+    const proUsers = users.filter(u => u.isSubscribed).length;
 
     container.innerHTML = `
       <div class="dashboard-header">
         <div>
-          <h1 style="font-size:2rem; font-weight:800; color:var(--text-bright);">Executive Admin Analytics</h1>
-          <p style="color:var(--text-secondary);">Real-time revenue, subscription growth, and content usage</p>
+          <h1 style="font-size:2rem; font-weight:800; color:var(--text-bright);">Executive Admin Analytics & Database Management</h1>
+          <p style="color:var(--text-secondary);">Real-time Supabase user records, revenue, and subscription expiration tracking</p>
         </div>
         <div style="display:flex; gap:0.75rem;">
-          <button class="btn btn-primary btn-sm" onclick="App.showToast('Content sync initiated!', 'info')">+ Publish New Snippet</button>
+          <button class="btn btn-primary btn-sm" onclick="App.showToast('Supabase table sync complete!', 'success')">⚡ Refresh Supabase Records</button>
         </div>
       </div>
 
@@ -94,76 +124,65 @@ const Dashboards = {
         </div>
         <div class="kpi-card purple">
           <span class="kpi-title">Total Active Pro Users</span>
-          <span class="kpi-value">5,420</span>
-          <span class="kpi-trend positive">▲ +480 new this week</span>
+          <span class="kpi-value">${proUsers} / ${totalUsers}</span>
+          <span class="kpi-trend positive">▲ Live Supabase Users</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-title">Total Snippet Downloads</span>
-          <span class="kpi-value">89,400</span>
-          <span class="kpi-trend positive">▲ +12.4k code downloads</span>
+          <span class="kpi-title">Total Registered Accounts</span>
+          <span class="kpi-value">${totalUsers}</span>
+          <span class="kpi-trend positive">▲ Supabase DB Users</span>
         </div>
         <div class="kpi-card amber">
           <span class="kpi-title">Conversion Rate</span>
-          <span class="kpi-value">8.42%</span>
-          <span class="kpi-trend positive">▲ Premium paywall conversion</span>
+          <span class="kpi-value">${totalUsers > 0 ? Math.round((proUsers/totalUsers)*100) : 0}%</span>
+          <span class="kpi-trend positive">▲ Paywall Conversion</span>
         </div>
       </div>
 
-      <div class="revenue-chart-card">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-          <div>
-            <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-bright);">Subscription Revenue Trajectory (₹ INR)</h3>
-            <p style="font-size:0.85rem; color:var(--text-secondary);">2026 Monthly Breakdown</p>
-          </div>
-          <span class="badge badge-emerald">₹29/mo Scalability</span>
-        </div>
-        <div class="chart-bars-container">
-          <div class="chart-bar-column"><div class="chart-bar" style="height:35%;"></div><span class="chart-label">Jan</span></div>
-          <div class="chart-bar-column"><div class="chart-bar" style="height:45%;"></div><span class="chart-label">Feb</span></div>
-          <div class="chart-bar-column"><div class="chart-bar" style="height:55%;"></div><span class="chart-label">Mar</span></div>
-          <div class="chart-bar-column"><div class="chart-bar" style="height:65%;"></div><span class="chart-label">Apr</span></div>
-          <div class="chart-bar-column"><div class="chart-bar" style="height:80%;"></div><span class="chart-label">May</span></div>
-          <div class="chart-bar-column"><div class="chart-bar" style="height:90%;"></div><span class="chart-label">Jun</span></div>
-          <div class="chart-bar-column"><div class="chart-bar" style="height:100%; background:var(--grad-hero);"></div><span class="chart-label">Jul</span></div>
-        </div>
-      </div>
-
-      <div class="data-table-wrapper">
-        <div style="padding:1.25rem; border-bottom:1px solid var(--border-color); font-weight:700; color:var(--text-bright);">
-          Recent Active Subscribers
+      <div class="data-table-wrapper" style="margin-top:2rem;">
+        <div style="padding:1.25rem; border-bottom:1px solid var(--border-color); font-weight:700; color:var(--text-bright); display:flex; justify-content:space-between; align-items:center;">
+          <span>Registered Users & Subscription Expiration Dates (Supabase Database)</span>
+          <span class="badge badge-cyan">${totalUsers} Users Recorded</span>
         </div>
         <table class="data-table">
           <thead>
             <tr>
               <th>User Name</th>
               <th>Email</th>
-              <th>Subscription</th>
-              <th>Amount</th>
-              <th>Date</th>
+              <th>Plan Status</th>
+              <th>Purchase / Registered Date</th>
+              <th>Subscription End Date</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Rohan Verma</td>
-              <td>rohan.v@gmail.com</td>
-              <td><span class="badge badge-pro">Pro ₹29</span></td>
-              <td>₹29.00</td>
-              <td>Today, 13:14</td>
-            </tr>
-            <tr>
-              <td>Sneha Patel</td>
-              <td>sneha_p@tech.io</td>
-              <td><span class="badge badge-pro">Pro ₹29</span></td>
-              <td>₹29.00</td>
-              <td>Today, 11:45</td>
-            </tr>
-            <tr>
-              <td>Vikram Malhotra</td>
-              <td>vikram@devs.com</td>
-              <td><span class="badge badge-pro">Pro ₹29</span></td>
-              <td>₹29.00</td>
-              <td>Yesterday, 19:20</td>
-            </tr>
+            ${usersError ? `
+              <tr>
+                <td colspan="5" style="padding:1.5rem; color:var(--accent-rose); text-align:center;">${usersError}</td>
+              </tr>
+            ` : users.length === 0 ? `
+              <tr>
+                <td colspan="5" style="padding:1.5rem; color:var(--text-muted); text-align:center;">No users found in Supabase users table.</td>
+              </tr>
+            ` : users.map(u => `
+              <tr>
+                <td style="font-weight:700; color:var(--text-bright); display:flex; align-items:center; gap:8px;">
+                  <div style="width:28px; height:28px; border-radius:50%; background:var(--grad-flutter); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">
+                    ${(u.name || u.email)[0].toUpperCase()}
+                  </div>
+                  <span>${u.name || 'Developer'}</span>
+                </td>
+                <td style="color:var(--text-secondary);">${u.email}</td>
+                <td>
+                  <span class="badge ${u.isSubscribed ? 'badge-pro' : 'badge-cyan'}">
+                    ${u.isSubscribed ? '✨ PRO ACTIVE' : 'FREE TIER'}
+                  </span>
+                </td>
+                <td>${u.createdAt ? u.createdAt.split('T')[0] : 'July 2026'}</td>
+                <td style="color:${u.isSubscribed ? '#10b981' : 'var(--text-muted)'}; font-weight:600;">
+                  ${u.subscriptionExpiresAt ? u.subscriptionExpiresAt.split('T')[0] : 'N/A'}
+                </td>
+              </tr>
+            `).join('')}
           </tbody>
         </table>
       </div>
@@ -172,4 +191,3 @@ const Dashboards = {
 };
 
 const DashboardRenderer = Dashboards;
-

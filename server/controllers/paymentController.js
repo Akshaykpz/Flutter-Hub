@@ -1,13 +1,11 @@
 /* ==========================================================================
-   Razorpay Payment Gateway Controller
+   Razorpay Payment Gateway Controller (Supabase Integration)
    Creates Orders securely from Backend for Monthly (₹29) or Yearly (₹300) Plans
    ========================================================================== */
 
 const crypto = require('crypto');
 const razorpayInstance = require('../config/razorpay');
-const Payment = require('../models/Payment');
-const User = require('../models/User');
-const Subscription = require('../models/Subscription');
+const supabase = require('../config/superbase');
 
 // @desc    Create Razorpay Order for ₹29/month or ₹300/year Pro Plan
 // @route   POST /api/payment/create-order
@@ -31,17 +29,20 @@ const createOrder = async (req, res) => {
     // Create Razorpay Order via Backend SDK Instance
     const order = await razorpayInstance.orders.create(options);
 
-    // Save initial payment log in MongoDB if connected
+    // Save initial payment record in Supabase table
     try {
-      await Payment.create({
-        userId: req.user ? req.user._id : null,
-        razorpayOrderId: order.id,
-        amount: amount,
-        currency: 'INR',
-        status: 'created',
-      });
+      await supabase.from('payments').insert([
+        {
+          user_id: req.user ? req.user._id : null,
+          razorpay_order_id: order.id,
+          amount: amount,
+          currency: 'INR',
+          status: 'created',
+          created_at: new Date(),
+        },
+      ]);
     } catch (dbErr) {
-      console.log('Payment log DB warning:', dbErr.message);
+      console.log('Payment Supabase log notice:', dbErr.message);
     }
 
     res.status(200).json({
@@ -99,42 +100,50 @@ const verifyPayment = async (req, res) => {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + durationDays);
 
-    // Update User Subscription in MongoDB
+    // Update User Subscription in Supabase users table
     const targetUserId = userId || (req.user ? req.user._id : null);
     if (targetUserId) {
       try {
-        await User.findByIdAndUpdate(targetUserId, {
-          isSubscribed: true,
-          subscriptionExpiresAt: expiryDate,
-        });
+        await supabase
+          .from('users')
+          .update({
+            subscription: 'pro',
+            is_subscribed: true,
+            subscription_expiry: expiryDate,
+            subscription_expires_at: expiryDate,
+            updated_at: new Date(),
+          })
+          .eq('id', targetUserId);
 
-        // Log Subscription record
-        await Subscription.create({
-          userId: targetUserId,
-          planName: isYearly ? 'Pro Yearly Pass (₹300/year)' : 'Pro Monthly Pass (₹29/month)',
-          amount: isYearly ? 300 : 29,
-          startDate: startDate,
-          endDate: expiryDate,
-          status: 'active',
-        });
+        // Log Subscription record in Supabase
+        await supabase.from('subscriptions').insert([
+          {
+            user_id: targetUserId,
+            plan_name: isYearly ? 'Pro Yearly Pass (₹300/year)' : 'Pro Monthly Pass (₹29/month)',
+            amount: isYearly ? 300 : 29,
+            start_date: startDate,
+            end_date: expiryDate,
+            status: 'active',
+            created_at: new Date(),
+          },
+        ]);
       } catch (userDbErr) {
-        console.log('User DB update warning:', userDbErr.message);
+        console.log('User Supabase update notice:', userDbErr.message);
       }
     }
 
-    // Update Payment record in MongoDB
+    // Update Payment record in Supabase
     try {
-      await Payment.findOneAndUpdate(
-        { razorpayOrderId: razorpay_order_id },
-        {
-          razorpayPaymentId: razorpay_payment_id,
-          razorpaySignature: razorpay_signature,
+      await supabase
+        .from('payments')
+        .update({
+          razorpay_payment_id: razorpay_payment_id,
+          razorpay_signature: razorpay_signature,
           status: 'paid',
-        },
-        { new: true, upsert: true }
-      );
+        })
+        .eq('razorpay_order_id', razorpay_order_id);
     } catch (payDbErr) {
-      console.log('Payment update DB warning:', payDbErr.message);
+      console.log('Payment update Supabase notice:', payDbErr.message);
     }
 
     res.status(200).json({
@@ -143,6 +152,7 @@ const verifyPayment = async (req, res) => {
       data: {
         paymentId: razorpay_payment_id,
         orderId: razorpay_order_id,
+        subscription: 'pro',
         isSubscribed: true,
         plan: isYearly ? 'yearly' : 'monthly',
         expiresAt: expiryDate,

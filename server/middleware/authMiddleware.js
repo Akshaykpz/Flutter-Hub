@@ -1,9 +1,9 @@
 /* ==========================================================================
-   Authentication & Premium Subscription Protection Middleware
+   Authentication & Premium Subscription Protection Middleware (Supabase)
    ========================================================================== */
 
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const supabase = require('../config/superbase');
 
 // Verify JWT Bearer Token
 const protect = async (req, res, next) => {
@@ -13,14 +13,27 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'flutterhub_secret');
-      req.user = await User.findById(decoded.id).select('-password');
+
+      const { data: user } = await supabase
+        .from('users')
+        .select('id, name, email, is_subscribed, subscription_expires_at')
+        .eq('id', decoded.id)
+        .maybeSingle();
+
+      req.user = user ? {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        isSubscribed: user.is_subscribed,
+        subscriptionExpiresAt: user.subscription_expires_at,
+      } : { _id: decoded.id, name: 'Developer', isSubscribed: false };
+
       return next();
     } catch (error) {
       return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
     }
   }
 
-  // Allow optional unauthenticated pass for public requests with warning
   req.user = null;
   next();
 };
