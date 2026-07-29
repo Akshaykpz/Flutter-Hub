@@ -12,6 +12,7 @@ const PaymentGateway = {
 
   selectedPlan: 'yearly', // 'monthly' (₹29) or 'yearly' (₹300)
   isOpeningCheckout: false,
+  appliedCoupon: null,
 
   setRazorpayKey: function (key) {
     this.razorpayKeyId = key;
@@ -20,6 +21,11 @@ const PaymentGateway = {
   },
 
   openCheckout: function (plan = 'yearly') {
+    if (!AuthManager.currentUser) {
+      App.showToast('🔒 Account Sign In Required! Please log in or register to purchase Pro Pass.', 'error');
+      AuthManager.openAuthModal('signin');
+      return;
+    }
     this.selectedPlan = plan;
     const modal = document.getElementById('razorpay-modal');
     if (modal) {
@@ -40,10 +46,68 @@ const PaymentGateway = {
     this.updateModalPlanUI();
   },
 
+  handleApplyCouponClick: async function () {
+    const input = document.getElementById('checkout-coupon-input');
+    const breakdownEl = document.getElementById('coupon-applied-breakdown');
+    const code = input ? input.value.trim() : '';
+
+    if (!code) {
+      if (input) input.style.borderColor = '#f43f5e';
+      if (breakdownEl) {
+        breakdownEl.style.display = 'block';
+        breakdownEl.style.color = '#f43f5e';
+        breakdownEl.innerHTML = `⚠️ Please enter a coupon code before applying.`;
+      }
+      App.showToast('Please enter a coupon code.', 'error');
+      return;
+    }
+
+    App.showToast(`Validating coupon code ${code}...`, 'info');
+    const result = await CouponManager.validateCheckoutCoupon(code, this.selectedPlan);
+
+    if (result && result.success && result.data) {
+      const data = result.data;
+      this.appliedCoupon = data;
+
+      if (input) input.style.borderColor = '#10b981';
+
+      if (breakdownEl) {
+        breakdownEl.style.display = 'block';
+        breakdownEl.style.color = '#10b981';
+        breakdownEl.innerHTML = `
+          ✅ <strong>${data.coupon_code} Applied Successfully!</strong><br>
+          Original Price: ₹${data.originalPrice} | 10% Discount: -₹${data.discountAmount}<br>
+          <span style="font-size:0.95rem; color:#38bdf8; font-weight:800;">Final Payable Amount: ₹${data.finalPrice}</span>
+        `;
+      }
+
+      this.updateModalPlanUI();
+      App.showToast(result.message || 'Coupon applied successfully!', 'success');
+    } else {
+      this.appliedCoupon = null;
+      if (input) input.style.borderColor = '#f43f5e';
+
+      const errMsg = result?.message || 'Incorrect or invalid coupon code. Please check and try again.';
+      if (breakdownEl) {
+        breakdownEl.style.display = 'block';
+        breakdownEl.style.color = '#f43f5e';
+        breakdownEl.innerHTML = `❌ <strong>Invalid Coupon:</strong> ${errMsg}`;
+      }
+
+      this.updateModalPlanUI();
+      App.showToast(errMsg, 'error');
+    }
+  },
+
   updateModalPlanUI: function () {
     const isYearly = this.selectedPlan === 'yearly';
-    const amountText = isYearly ? '₹300 / year' : '₹29 / month';
-    const btnText = isYearly ? 'Launch Razorpay Checkout (₹300/yr)' : 'Launch Razorpay Checkout (₹29/mo)';
+    let amountText = isYearly ? '₹300 / year' : '₹29 / month';
+    let btnText = isYearly ? 'Launch Razorpay Checkout (₹300/yr)' : 'Launch Razorpay Checkout (₹29/mo)';
+
+    if (isYearly && this.appliedCoupon) {
+      amountText = `₹${this.appliedCoupon.finalPrice} / year (10% OFF)`;
+      btnText = `Launch Razorpay Checkout (₹${this.appliedCoupon.finalPrice}/yr)`;
+    }
 
     const priceEl = document.getElementById('modal-price-display');
     if (priceEl) priceEl.innerText = amountText;
@@ -68,8 +132,11 @@ const PaymentGateway = {
     self.isOpeningCheckout = true;
 
     const isYearly = self.selectedPlan === 'yearly';
-    const planAmountPaise = isYearly ? 30000 : 2900;
-    const planLabel = isYearly ? 'Pro Yearly Pass (₹300/yr)' : 'Pro Monthly Pass (₹29/mo)';
+    let planAmountPaise = isYearly ? 30000 : 2900;
+    if (isYearly && self.appliedCoupon) {
+      planAmountPaise = self.appliedCoupon.finalPrice * 100;
+    }
+    const planLabel = isYearly ? (self.appliedCoupon ? `Pro Yearly Pass (₹${self.appliedCoupon.finalPrice}/yr)` : 'Pro Yearly Pass (₹300/yr)') : 'Pro Monthly Pass (₹29/mo)';
 
     const payBtn = document.getElementById('rzp-pay-confirm-btn');
     if (payBtn) {
@@ -82,7 +149,7 @@ const PaymentGateway = {
 
     App.showToast(`Initiating Razorpay ${planLabel}...`, 'info');
 
-    // Prepare Razorpay options immediately for instant launch
+    // Prepare Razorpay options
     const options = {
       key: self.razorpayKeyId,
       amount: planAmountPaise,
@@ -109,7 +176,7 @@ const PaymentGateway = {
       },
     };
 
-    // Fast backend order fetch with 800ms abort controller timeout
+    // Fast backend order fetch
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 800);
@@ -137,7 +204,7 @@ const PaymentGateway = {
       console.log('Fast backend order check skipped:', e.message);
     }
 
-    // Launch Razorpay Popup Instantly!
+    // Launch Razorpay Popup
     if (typeof Razorpay !== 'undefined') {
       try {
         const rzp = new Razorpay(options);
@@ -150,7 +217,6 @@ const PaymentGateway = {
       self.processPayment('sandbox');
     }
 
-    // Reset button loading state after popup opens
     setTimeout(() => {
       self.resetButtonState();
     }, 1500);
@@ -159,6 +225,21 @@ const PaymentGateway = {
   verifyPaymentOnBackend: async function (paymentResponse) {
     const self = this;
     App.showToast('Verifying payment signature...', 'info');
+
+    if (self.appliedCoupon) {
+      try {
+        await fetch('/api/coupons/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            coupon_code: self.appliedCoupon.coupon_code,
+            payment_id: paymentResponse?.razorpay_payment_id || 'pay_direct'
+          })
+        });
+      } catch (e) {
+        console.warn("Notice updating coupon used status:", e);
+      }
+    }
 
     try {
       const response = await fetch(`${self.backendUrl}/api/payment/verify`, {
@@ -203,6 +284,17 @@ const PaymentGateway = {
       `;
     }
 
+    if (self.appliedCoupon) {
+      fetch('/api/coupons/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          coupon_code: self.appliedCoupon.coupon_code,
+          payment_id: 'pay_sandbox_' + Date.now()
+        })
+      }).catch(() => null);
+    }
+
     setTimeout(() => {
       self.closeCheckout();
       self.resetButtonState();
@@ -216,7 +308,11 @@ const PaymentGateway = {
     if (payBtn) {
       payBtn.disabled = false;
       const isYearly = this.selectedPlan === 'yearly';
-      payBtn.innerText = isYearly ? 'Launch Razorpay Checkout (₹300/yr)' : 'Launch Razorpay Checkout (₹29/mo)';
+      let btnText = isYearly ? 'Launch Razorpay Checkout (₹300/yr)' : 'Launch Razorpay Checkout (₹29/mo)';
+      if (isYearly && this.appliedCoupon) {
+        btnText = `Launch Razorpay Checkout (₹${this.appliedCoupon.finalPrice}/yr)`;
+      }
+      payBtn.innerText = btnText;
     }
   },
 };

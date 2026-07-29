@@ -14,6 +14,9 @@ const App = {
 
 
     AuthManager.init();
+    if (window.Dashboards && typeof window.Dashboards.initAdminOverrides === 'function') {
+      Dashboards.initAdminOverrides();
+    }
 
 
     this.renderCategoriesSidebar();
@@ -38,10 +41,19 @@ const App = {
       }
       if (e.key === 'Escape') {
         AuthManager.closeAuthModal();
+        AuthManager.closeLogoutModal();
         this.closeSearchModal();
         PaymentGateway.closeCheckout();
       }
     });
+
+    // 4. Activate initial view based on user authentication state
+    const isAdmin = AuthManager.currentUser && (AuthManager.currentUser.isAdmin || AuthManager.currentUser.role === 'admin' || (AuthManager.currentUser.email && AuthManager.currentUser.email.toLowerCase() === 'admin@admin.com'));
+    if (isAdmin) {
+      this.switchView('admin-dashboard');
+    } else {
+      this.switchView(this.currentView || 'home');
+    }
 
     console.log("🚀 FlutterHub Engine Initialized!");
   },
@@ -135,8 +147,23 @@ const App = {
     modal.classList.add('active');
   },
 
+  handleBrandClick: function (e) {
+    if (e) e.preventDefault();
+    const isAdmin = AuthManager.currentUser && (AuthManager.currentUser.isAdmin || AuthManager.currentUser.role === 'admin' || (AuthManager.currentUser.email && AuthManager.currentUser.email.toLowerCase() === 'admin@admin.com'));
+    if (isAdmin) {
+      this.switchView('admin-dashboard');
+    } else {
+      this.switchView('home');
+    }
+  },
+
   // View Navigation Router
   switchView: function (viewId) {
+    const isAdmin = AuthManager.currentUser && (AuthManager.currentUser.isAdmin || AuthManager.currentUser.role === 'admin' || (AuthManager.currentUser.email && AuthManager.currentUser.email.toLowerCase() === 'admin@admin.com'));
+    if (isAdmin && viewId !== 'admin-dashboard') {
+      viewId = 'admin-dashboard';
+    }
+
     this.currentView = viewId;
     const views = document.querySelectorAll('.app-view');
     views.forEach(v => v.style.display = 'none');
@@ -196,12 +223,27 @@ const App = {
     }
   },
 
+  componentSearchQuery: '',
+
   // Category Sidebar Renderer
   renderCategoriesSidebar: function () {
     const container = document.getElementById('category-sidebar-list');
     if (!container) return;
 
     let html = `
+      <div style="padding:0.25rem 0.25rem 0.85rem 0.25rem; margin-bottom:0.85rem; border-bottom:1px solid var(--border-color);">
+        <div style="position:relative;">
+          <input type="text" id="sidebar-component-search" placeholder="🔍 Search components..." 
+            value="${this.escapeHTML(this.componentSearchQuery || '')}"
+            oninput="App.handleComponentSearch(this.value)" 
+            style="width:100%; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-bright); padding:0.55rem 0.85rem 0.55rem 2.2rem; border-radius:10px; font-size:0.85rem;" />
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+        </div>
+      </div>
+
       <button class="cat-btn ${this.activeCategory === 'all' ? 'active' : ''}" onclick="App.filterCategory('all')">
         <span>All Components</span>
         <span class="cat-count">${FLUTTER_DATA.components.length}</span>
@@ -220,6 +262,11 @@ const App = {
     container.innerHTML = html;
   },
 
+  handleComponentSearch: function (query) {
+    this.componentSearchQuery = query;
+    this.renderComponentGrid();
+  },
+
   filterCategory: function (catId) {
     this.activeCategory = catId;
     this.renderCategoriesSidebar();
@@ -236,11 +283,22 @@ const App = {
       list = list.filter(c => c.category === this.activeCategory);
     }
 
+    if (this.componentSearchQuery) {
+      const q = this.componentSearchQuery.toLowerCase().trim();
+      list = list.filter(c =>
+        (c.title && c.title.toLowerCase().includes(q)) ||
+        (c.description && c.description.toLowerCase().includes(q)) ||
+        (c.badge && c.badge.toLowerCase().includes(q)) ||
+        (c.category && c.category.toLowerCase().includes(q)) ||
+        (c.code && c.code.toLowerCase().includes(q))
+      );
+    }
+
     if (list.length === 0) {
       container.innerHTML = `
         <div style="grid-column:1/-1; padding:4rem; text-align:center; color:var(--text-muted);" class="glass-panel">
-          <h3>No components found in this category</h3>
-          <p style="margin-top:8px;">Try selecting 'All Components' to view available snippets.</p>
+          <h3>No components matching "${this.escapeHTML(this.componentSearchQuery || '')}"</h3>
+          <p style="margin-top:8px;">Try clearing the search box or selecting 'All Components'.</p>
         </div>
       `;
       return;
@@ -400,13 +458,32 @@ const App = {
   },
 
   // Projects Renderer
-  renderProjects: function () {
+  renderProjects: function (searchQuery = '') {
     const container = document.getElementById('projects-grid');
     if (!container) return;
 
     const isPro = AuthManager.currentUser && AuthManager.currentUser.isPro;
+    const q = (searchQuery || '').toLowerCase().trim();
+    let list = FLUTTER_DATA.projects;
+    if (q) {
+      list = list.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        (p.badge && p.badge.toLowerCase().includes(q))
+      );
+    }
 
-    container.innerHTML = FLUTTER_DATA.projects.map(p => `
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column:1/-1; padding:3.5rem; text-align:center; color:var(--text-muted);" class="glass-panel">
+          <h3>No full projects matching "${this.escapeHTML(searchQuery)}"</h3>
+          <p style="margin-top:8px;">Try searching for another app template.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(p => `
       <div class="pricing-card">
         <span class="badge ${p.isPremium ? (isPro ? 'badge-emerald' : 'badge-pro') : 'badge-cyan'}" style="width:fit-content; margin-bottom:1rem;">
           ${p.isPremium ? (isPro ? '✓ UNLOCKED' : p.badge) : 'FREE'}
@@ -442,11 +519,36 @@ const App = {
   },
 
   // Roadmaps Renderer
-  renderRoadmaps: function () {
+  renderRoadmaps: function (searchQuery = '') {
     const container = document.getElementById('roadmaps-container');
     if (!container) return;
 
-    const freeHtml = FLUTTER_DATA.roadmaps.free.map(r => `
+    const q = (searchQuery || '').toLowerCase().trim();
+
+    const filterList = (list) => {
+      if (!q) return list;
+      return list.filter(r =>
+        r.title.toLowerCase().includes(q) ||
+        r.level.toLowerCase().includes(q) ||
+        r.duration.toLowerCase().includes(q) ||
+        r.topics.some(t => t.toLowerCase().includes(q))
+      );
+    };
+
+    const freeList = filterList(FLUTTER_DATA.roadmaps.free);
+    const proList = filterList(FLUTTER_DATA.roadmaps.pro);
+
+    if (freeList.length === 0 && proList.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column:1/-1; padding:3.5rem; text-align:center; color:var(--text-muted);" class="glass-panel">
+          <h3>No roadmaps matching "${this.escapeHTML(searchQuery)}"</h3>
+          <p style="margin-top:8px;">Try searching for another topic (e.g. State, Animations, Clean Architecture).</p>
+        </div>
+      `;
+      return;
+    }
+
+    const freeHtml = freeList.map(r => `
       <div class="glass-panel" style="padding:1.5rem; margin-bottom:1rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
           <span class="badge badge-cyan">STEP ${r.step} • ${r.duration}</span>
@@ -459,7 +561,7 @@ const App = {
       </div>
     `).join('');
 
-    const proHtml = FLUTTER_DATA.roadmaps.pro.map(r => `
+    const proHtml = proList.map(r => `
       <div class="glass-panel" style="padding:1.5rem; margin-bottom:1rem; border-color:rgba(245,158,11,0.3);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
           <span class="badge badge-pro">PRO STEP ${r.step} • ${r.duration}</span>
@@ -474,22 +576,45 @@ const App = {
 
     container.innerHTML = `
       <div>
-        <h3 style="font-size:1.2rem; font-weight:700; color:var(--text-bright); margin-bottom:1rem;">Free Basic Roadmap</h3>
-        ${freeHtml}
+        <h3 style="font-size:1.2rem; font-weight:700; color:var(--text-bright); margin-bottom:1rem;">Free Basic Roadmap (${freeList.length})</h3>
+        ${freeHtml || '<p style="color:var(--text-muted);">No free steps match filter.</p>'}
       </div>
       <div>
-        <h3 style="font-size:1.2rem; font-weight:700; color:#f59e0b; margin-bottom:1rem;">Pro 30-Day Calendar Path (₹29/mo)</h3>
-        ${proHtml}
+        <h3 style="font-size:1.2rem; font-weight:700; color:#f59e0b; margin-bottom:1rem;">Pro 30-Day Calendar Path (${proList.length})</h3>
+        ${proHtml || '<p style="color:var(--text-muted);">No pro steps match filter.</p>'}
       </div>
     `;
   },
 
   // Documentation Renderer
-  renderDocumentation: function () {
+  renderDocumentation: function (searchQuery = '') {
     const container = document.getElementById('documentation-container');
     if (!container) return;
 
-    container.innerHTML = FLUTTER_DATA.documentation.map(d => `
+    const q = (searchQuery || '').toLowerCase().trim();
+    let list = FLUTTER_DATA.documentation;
+    if (q) {
+      list = list.filter(d =>
+        d.title.toLowerCase().includes(q) ||
+        d.category.toLowerCase().includes(q) ||
+        d.description.toLowerCase().includes(q) ||
+        (d.bestPractices && d.bestPractices.toLowerCase().includes(q)) ||
+        (d.performanceTips && d.performanceTips.toLowerCase().includes(q)) ||
+        (d.exampleCode && d.exampleCode.toLowerCase().includes(q))
+      );
+    }
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column:1/-1; padding:3.5rem; text-align:center; color:var(--text-muted);" class="glass-panel">
+          <h3>No widget docs matching "${this.escapeHTML(searchQuery)}"</h3>
+          <p style="margin-top:8px;">Try searching for another widget (e.g. ListView, CustomPainter, StreamBuilder).</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(d => `
       <div class="glass-panel" style="padding:1.75rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
           <h3 style="font-size:1.25rem; font-weight:700; color:var(--text-bright);">${d.title}</h3>
@@ -509,11 +634,32 @@ const App = {
   },
 
   // Jobs Board Renderer
-  renderJobs: function () {
+  renderJobs: function (searchQuery = '') {
     const container = document.getElementById('jobs-container');
     if (!container) return;
 
-    container.innerHTML = FLUTTER_DATA.jobs.map(j => `
+    const q = (searchQuery || '').toLowerCase().trim();
+    let list = FLUTTER_DATA.jobs;
+    if (q) {
+      list = list.filter(j =>
+        (j.company && j.company.toLowerCase().includes(q)) ||
+        (j.title && j.title.toLowerCase().includes(q)) ||
+        (j.location && j.location.toLowerCase().includes(q)) ||
+        (j.salary && j.salary.toLowerCase().includes(q))
+      );
+    }
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column:1/-1; padding:3.5rem; text-align:center; color:var(--text-muted);" class="glass-panel">
+          <h3>No job openings matching "${this.escapeHTML(searchQuery)}"</h3>
+          <p style="margin-top:8px;">Try searching for Remote, Senior, or India.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(j => `
       <div class="pricing-card" style="padding:1.5rem;">
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
           <div style="width:40px; height:40px; border-radius:10px; background:${j.logoBg}; color:#000; font-weight:800; display:flex; align-items:center; justify-content:center;">
@@ -527,7 +673,7 @@ const App = {
         <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-bright); margin-bottom:0.5rem;">${j.title}</h3>
         <p style="color:var(--accent-cyan-light); font-weight:700; font-size:0.9rem; margin-bottom:1rem;">${j.salary}</p>
         <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.25rem;">
-          ${j.tags.map(t => `<span class="badge badge-purple" style="font-size:10px;">${t}</span>`).join('')}
+          ${(j.tags || []).map(t => `<span class="badge badge-purple" style="font-size:10px;">${t}</span>`).join('')}
         </div>
         <a href="${j.applyUrl}" target="_blank" class="btn btn-primary btn-sm" style="width:100%; text-align:center;">Apply Now</a>
       </div>

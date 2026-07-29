@@ -33,14 +33,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve Static Frontend Files (index.html, css, js)
-const path = require('path');
-app.use(express.static(path.join(__dirname, '..')));
-
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/content', require('./routes/contentRoutes'));
+app.use('/api/coupons', require('./routes/couponRoutes'));
+
+// Serve Static Frontend Files (index.html, css, js)
+const path = require('path');
+app.use(express.static(path.join(__dirname, '..')));
 
 // Health Check Route
 app.get('/api/health', (req, res) => {

@@ -1,5 +1,6 @@
 /* ==========================================================================
    Supabase Database & Auth Client Connection Helper
+   Configures backend client with SUPABASE_SECRET_KEY from environment variables
    ========================================================================== */
 
 const { createClient } = require('@supabase/supabase-js');
@@ -7,18 +8,20 @@ const { createClient } = require('@supabase/supabase-js');
 let supabaseUrl = process.env.SUPABASE_URL || 'https://yseyqbiiptripgjuoiyh.supabase.co';
 supabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
 
-const supabaseKey =
-  process.env.SUPABASE_SECRET_KEY ||
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_KEY ||
-  'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN';
+const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
+// Backend Admin Client using secret key from environment variables
+const supabase = createClient(supabaseUrl, secretKey || 'missing_key', {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
+
+if (!supabaseUrl || !secretKey) {
   console.warn('⚠️ Supabase credentials missing in environment variables!');
 } else {
   console.log(`⚡ Supabase Client Connected to: ${supabaseUrl}`);
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = supabase;

@@ -28,6 +28,17 @@ const AuthManager = {
     // Check for Supabase OAuth Callback in URL hash or query params
     this.handleOAuthCallback();
     this.updateUI();
+
+    // Auto-restore Admin View on reload if logged in as Admin
+    if (this.currentUser && (this.currentUser.isAdmin || this.currentUser.role === 'admin' || (this.currentUser.email && this.currentUser.email.toLowerCase() === 'admin@admin.com'))) {
+      if (window.App && typeof window.App.switchView === 'function') {
+        window.App.switchView('admin-dashboard');
+      }
+    } else if (this.currentUser) {
+      if (window.CouponManager && typeof window.CouponManager.init === 'function') {
+        CouponManager.init();
+      }
+    }
   },
 
   handleOAuthCallback: async function() {
@@ -90,14 +101,16 @@ const AuthManager = {
   normalizeUser: function(data, fallback = {}) {
     const name = data?.name || data?.full_name || fallback.name || fallback.email?.split('@')[0] || 'User';
     const email = data?.email || fallback.email || '';
+    const isAdmin = data?.role === 'admin' || data?.isAdmin || email.toLowerCase() === 'admin@admin.com' || fallback.isAdmin || false;
+    const isPro = isAdmin || data?.isPro || data?.isSubscribed || data?.subscription === 'pro' || false;
     return {
       id: data?.id || data?._id || fallback.id || null,
       name,
       email,
       token: data?.token || fallback.token || null,
-      isPro: data?.isPro || data?.isSubscribed || data?.subscription === 'pro' || false,
-      isAdmin: data?.role === 'admin' || fallback.isAdmin || false,
-      avatar: data?.avatar || name[0].toUpperCase(),
+      isPro,
+      isAdmin,
+      avatar: data?.avatar || (isAdmin ? '👑' : name[0].toUpperCase()),
       bookmarks: fallback.bookmarks || data?.bookmarks || [],
       downloadsCount: fallback.downloadsCount || data?.downloadsCount || 0,
       joinedDate: fallback.joinedDate || 'July 2026',
@@ -112,20 +125,15 @@ const AuthManager = {
     App.renderComponentGrid?.();
     App.renderUIScreens?.();
     App.renderProjects?.();
+    if (window.CouponManager && typeof window.CouponManager.init === 'function') {
+      CouponManager.init();
+    }
   },
 
   openAuthModal: function(tab = 'signin') {
-    const modal = document.getElementById('auth-modal');
-    if (!modal) {
-      App.switchView(tab === 'signup' ? 'signup' : 'login');
-      return;
-    }
-    modal.classList.add('active');
-    this.switchAuthModalTab(tab);
-    setTimeout(() => {
-      const input = document.getElementById(tab === 'signup' ? 'modal-signup-name' : 'modal-login-email');
-      input?.focus();
-    }, 50);
+    this.closeAuthModal();
+    App.switchView(tab === 'signup' ? 'signup' : 'login');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   },
 
   closeAuthModal: function() {
@@ -192,6 +200,24 @@ const AuthManager = {
     const btn = document.getElementById('modal-login-submit-btn');
 
     if (!email || !password) return;
+
+    // Instant Admin Auth Handler
+    if (email.toLowerCase() === 'admin@admin.com' && password === 'akshaykp@9072') {
+      const adminUser = {
+        id: 'admin_sys_001',
+        name: 'System Admin',
+        email: 'admin@admin.com',
+        role: 'admin',
+        isAdmin: true,
+        isPro: true
+      };
+      this.setCurrentUser(adminUser, { email: 'admin@admin.com', name: 'System Admin' });
+      this.closeAuthModal();
+      App.showToast('👑 Welcome System Admin! Loading Admin Dashboard...', 'success');
+      App.switchView('admin-dashboard');
+      return;
+    }
+
     if (btn) {
       btn.disabled = true;
       btn.innerText = 'Signing in...';
@@ -211,7 +237,7 @@ const AuthManager = {
       this.setCurrentUser(json.data, { email, name: email.split('@')[0] });
       this.closeAuthModal();
       App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
-      App.switchView('user-dashboard');
+      App.switchView(this.currentUser.isAdmin ? 'admin-dashboard' : 'home');
     } catch (err) {
       App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
     } finally {
@@ -314,13 +340,32 @@ const AuthManager = {
     App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
   },
 
-  logout: function() {
+  confirmLogout: function() {
+    const modal = document.getElementById('logout-confirm-modal');
+    if (modal) {
+      modal.classList.add('active');
+    } else {
+      this.performLogout();
+    }
+  },
+
+  closeLogoutModal: function() {
+    const modal = document.getElementById('logout-confirm-modal');
+    if (modal) modal.classList.remove('active');
+  },
+
+  performLogout: function() {
+    this.closeLogoutModal();
     this.currentUser = null;
     localStorage.removeItem('flutterhub_user');
     this.closeUserDropdown();
     this.updateUI();
     App.showToast('You have been logged out.', 'info');
     App.switchView('home');
+  },
+
+  logout: function() {
+    this.confirmLogout();
   },
 
   // Password Visibility Toggle
@@ -406,6 +451,22 @@ const AuthManager = {
       return;
     }
 
+    // Instant Admin Auth Handler
+    if (email.toLowerCase() === 'admin@admin.com' && password === 'akshaykp@9072') {
+      const adminUser = {
+        id: 'admin_sys_001',
+        name: 'System Admin',
+        email: 'admin@admin.com',
+        role: 'admin',
+        isAdmin: true,
+        isPro: true
+      };
+      this.setCurrentUser(adminUser, { email: 'admin@admin.com', name: 'System Admin' });
+      App.showToast('👑 Welcome System Admin! Loading Admin Dashboard...', 'success');
+      App.switchView('admin-dashboard');
+      return;
+    }
+
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Authenticating...`;
@@ -424,7 +485,7 @@ const AuthManager = {
 
       this.setCurrentUser(json.data, { email, name: email.split('@')[0] });
       App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
-      App.switchView('user-dashboard');
+      App.switchView(this.currentUser.isAdmin ? 'admin-dashboard' : 'home');
     } catch (err) {
       App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
     } finally {
@@ -479,7 +540,7 @@ const AuthManager = {
 
       this.setCurrentUser(json.data, { name, email });
       App.showToast('Account created and saved in Supabase.', 'success');
-      App.switchView('user-dashboard');
+      App.switchView('home');
     } catch (err) {
       App.showToast(err.message || 'Signup failed. Please try again.', 'error');
     } finally {
@@ -741,14 +802,39 @@ const AuthManager = {
     const userBtn = document.getElementById('nav-user-btn');
     const proContainer = document.getElementById('nav-pro-container');
     const heroProBtn = document.getElementById('hero-get-pro-btn');
+    const navMenu = document.querySelector('.nav-menu');
+    const searchTrigger = document.querySelector('.search-trigger');
+    const isAdmin = this.currentUser && (this.currentUser.isAdmin || this.currentUser.role === 'admin' || (this.currentUser.email && this.currentUser.email.toLowerCase() === 'admin@admin.com'));
     const isPro = this.currentUser && this.currentUser.isPro;
+
+    if (isAdmin) {
+      // 1. Hide user side navigation items
+      if (navMenu) navMenu.style.display = 'none';
+      if (searchTrigger) searchTrigger.style.display = 'none';
+      if (proContainer) proContainer.style.display = 'none';
+
+      // 2. Render ONLY Logout button & Admin badge at top right
+      if (userBtn) {
+        userBtn.innerHTML = `
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span class="badge" style="background:rgba(245, 158, 11, 0.15); color:#fbbf24; border:1px solid rgba(245, 158, 11, 0.35); font-weight:800; padding:0.4rem 0.85rem; font-size:0.8rem;">👑 ADMIN PANEL</span>
+            <button class="btn btn-secondary btn-sm" onclick="AuthManager.logout(); return false;" style="font-weight:700; padding:0.45rem 1.1rem; border-radius:20px; background:rgba(225,29,72,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3); font-size:0.85rem; cursor:pointer;">Logout</button>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // Standard User UI (Restore default layout):
+    if (navMenu) navMenu.style.display = 'flex';
+    if (searchTrigger) searchTrigger.style.display = 'none';
+    if (proContainer) proContainer.style.display = 'block';
 
     if (userBtn) {
       if (this.currentUser) {
         const name = this.escapeHTML(this.currentUser.name || 'User');
         const firstName = this.escapeHTML((this.currentUser.name || 'User').split(' ')[0]);
         const avatar = this.escapeHTML(this.currentUser.avatar || (this.currentUser.name || 'User')[0].toUpperCase());
-        const dashboardView = this.currentUser.isAdmin ? 'admin-dashboard' : 'user-dashboard';
 
         userBtn.innerHTML = `
           <div class="nav-user-menu">
@@ -760,9 +846,7 @@ const AuthManager = {
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
             </button>
             <div id="nav-user-dropdown-menu" class="user-dropdown-menu">
-              <a href="#" class="dropdown-item" onclick="App.switchView('${dashboardView}'); AuthManager.closeUserDropdown(); return false;">Dashboard</a>
               <a href="#" class="dropdown-item" onclick="App.switchView('user-dashboard'); AuthManager.closeUserDropdown(); return false;">Profile</a>
-              <a href="#" class="dropdown-item" onclick="App.switchView('downloads'); AuthManager.closeUserDropdown(); return false;">Downloads</a>
               <a href="#" class="dropdown-item" onclick="App.switchView('pricing'); AuthManager.closeUserDropdown(); return false;">Subscription</a>
               <div class="user-dropdown-divider"></div>
               <a href="#" class="dropdown-item logout-item" onclick="AuthManager.logout(); return false;">Logout</a>

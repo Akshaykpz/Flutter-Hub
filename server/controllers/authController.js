@@ -1,11 +1,12 @@
 /* ==========================================================================
    User Authentication & Supabase Database Sync Controller
-   Includes detailed terminal & debug console timestamps for logs, inserts, and fetches
+   Matching Exact Supabase Table Schema: [id, created_at, name, email, password]
    ========================================================================== */
 
 const supabase = require('../config/supabase');
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
+const couponController = require('./couponController');
 
 // Logger helper for formatted terminal / debug console output
 const logTime = () => new Date().toISOString();
@@ -19,7 +20,8 @@ const logDb = (action, message) => {
 // Helper to convert DB user record to standardized client user object
 const toClientUser = (user) => {
   const name = user?.name || user?.full_name || user?.email?.split('@')[0] || 'User';
-  const isPro = user?.subscription === 'pro' || !!user?.is_subscribed;
+  const isAdmin = user?.role === 'admin' || user?.email?.toLowerCase() === 'admin@admin.com';
+  const isPro = isAdmin || user?.subscription === 'pro' || !!user?.is_subscribed;
 
   return {
     _id: user?.id,
@@ -27,8 +29,9 @@ const toClientUser = (user) => {
     full_name: name,
     name,
     email: user?.email,
-    avatar: user?.avatar || name[0].toUpperCase(),
-    role: user?.role || 'user',
+    avatar: user?.avatar || (isAdmin ? '👑' : name[0].toUpperCase()),
+    role: isAdmin ? 'admin' : (user?.role || 'user'),
+    isAdmin,
     subscription: isPro ? 'pro' : 'free',
     isSubscribed: isPro,
     token: user?.id ? generateToken(user.id) : null,
@@ -53,14 +56,16 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     // 1. Check if user already exists in Supabase users database table
     const fetchStartTime = Date.now();
-    logDb('FETCH CHECK', `Checking if email "${email}" exists in Supabase users table at ${logTime()}`);
-    
+    logDb('FETCH CHECK', `Checking if email "${cleanEmail}" exists in Supabase users table at ${logTime()}`);
+
     const { data: existingUser } = await supabase
       .from('users')
       .select('*')
-      .eq('email', email)
+      .eq('email', cleanEmail)
       .maybeSingle();
 
     logDb('FETCH CHECK DONE', `Check completed in ${Date.now() - fetchStartTime}ms. User exists: ${!!existingUser}`);
@@ -70,50 +75,68 @@ const registerUser = async (req, res) => {
     }
 
     // 2. Register user in Supabase Auth service
-    logAuth('SUPABASE AUTH SIGN-UP', `Creating Supabase Auth credentials for ${email}...`);
+    logAuth('SUPABASE AUTH SIGN-UP', `Creating Supabase Auth credentials for ${cleanEmail}...`);
+    let authUser = null;
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
       options: {
-        data: { name },
+        data: { name: name.trim() },
       },
     });
 
     if (authError) {
-      logAuth('SIGN-UP ERROR', `Supabase Auth error: ${authError.message}`);
-      return res.status(400).json({
-        success: false,
-        message: authError.message || 'Unable to create account in Supabase Auth.',
+      const rawErrorMsg = authError.message || authError.name || 'Error creating auth user';
+      logAuth('SIGN-UP NOTICE', `Standard signUp notice: ${rawErrorMsg} (${authError.status || 500}). Attempting admin creation fallback...`);
+
+      // Fallback: Admin creation via Secret Key (bypasses SMTP email errors)
+      const { data: adminData, error: adminError } = await supabase.auth.admin.createUser({
+        email: cleanEmail,
+        password,
+        email_confirm: true,
+        user_metadata: { name: name.trim() }
       });
+
+      if (adminError) {
+        logAuth('SIGN-UP ERROR', `Supabase Auth error: ${adminError.message || rawErrorMsg}`);
+        return res.status(400).json({
+          success: false,
+          message: adminError.message || rawErrorMsg,
+        });
+      }
+      authUser = adminData?.user;
+    } else {
+      authUser = authData?.user;
     }
 
-    const authUser = authData?.user;
     const userId = authUser ? authUser.id : crypto.randomUUID();
 
-    // 3. Save user profile into Supabase `users` database table
+
     const insertStartTime = Date.now();
     const newUserRecord = {
       id: userId,
       name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role: 'user',
-      subscription: 'free',
+      email: cleanEmail,
       created_at: new Date().toISOString(),
     };
 
-    logDb('INSERT DATA', `Adding user record to Supabase users table at ${newUserRecord.created_at} | ID: ${userId} | Email: ${email}`);
+    logDb('INSERT DATA', `Adding user record to Supabase users table at ${newUserRecord.created_at} | ID: ${userId} | Email: ${cleanEmail}`);
 
     const { data: newUser, error: insertError } = await supabase
       .from('users')
-      .upsert([newUserRecord], { onConflict: 'email' })
+      .upsert([newUserRecord], { onConflict: 'id' })
       .select()
       .maybeSingle();
 
     if (insertError) {
-      logDb('INSERT WARNING', `Supabase users table insert warning: ${insertError.message}`);
+      logDb('INSERT NOTICE', `Supabase users table RLS policy notice: ${insertError.message}. Using Auth user profile.`);
     } else {
       logDb('INSERT SUCCESS', `User record successfully saved in Supabase database in ${Date.now() - insertStartTime}ms! ID: ${userId}`);
     }
+
+    // Auto-assign Welcome Scratch Coupon for new registration
+    await couponController.assignWelcomeCoupon(userId, cleanEmail, name.trim());
 
     return res.status(201).json({
       success: true,
@@ -139,14 +162,54 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please enter your email and password.' });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 0. Special Admin Verification (admin@admin.com / akshaykp@9072)
+    if (cleanEmail === 'admin@admin.com' && password === 'akshaykp@9072') {
+      logAuth('ADMIN LOGIN VERIFIED', `Admin credentials matched for ${cleanEmail}`);
+
+      let { data: adminUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (!adminUser) {
+        const adminRecord = {
+          id: 'admin_sys_' + crypto.randomUUID(),
+          name: 'System Admin',
+          email: 'admin@admin.com',
+          role: 'admin',
+          created_at: new Date().toISOString(),
+        };
+
+        const { data: insertedAdmin } = await supabase
+          .from('users')
+          .upsert([adminRecord], { onConflict: 'id' })
+          .select()
+          .maybeSingle();
+
+        adminUser = insertedAdmin || adminRecord;
+      }
+
+      adminUser.role = 'admin';
+      const clientAdmin = toClientUser(adminUser);
+
+      return res.json({
+        success: true,
+        message: '👑 Admin Sign in Successful! Loading Admin Dashboard...',
+        data: clientAdmin,
+      });
+    }
+
     // 1. Authenticate credentials with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
+      email: cleanEmail,
       password,
     });
 
     if (authError) {
-      logAuth('LOGIN FAILED', `Invalid credentials for ${email}: ${authError.message}`);
+      logAuth('LOGIN FAILED', `Invalid credentials for ${cleanEmail}: ${authError.message || authError.name}`);
       return res.status(401).json({
         success: false,
         message: authError.message || 'Invalid email or password.',
@@ -154,7 +217,6 @@ const loginUser = async (req, res) => {
     }
 
     const authUser = authData?.user;
-    const cleanEmail = email.trim().toLowerCase();
     logAuth('LOGIN VERIFIED', `Supabase Auth verified at ${logTime()} | User ID: ${authUser?.id}`);
 
     // 2. Query user profile from Supabase `users` database table
@@ -176,24 +238,30 @@ const loginUser = async (req, res) => {
         id: authUser ? authUser.id : crypto.randomUUID(),
         name: authUser?.user_metadata?.name || cleanEmail.split('@')[0],
         email: cleanEmail,
-        role: 'user',
-        subscription: 'free',
         created_at: new Date().toISOString(),
       };
 
       logDb('AUTO-INSERT PROFILE', `Creating missing user profile in Supabase users table at ${newUserRecord.created_at} for ID: ${newUserRecord.id}`);
 
-      const { data: insertedUser } = await supabase
+      const { data: insertedUser, error: autoInsertError } = await supabase
         .from('users')
-        .upsert([newUserRecord], { onConflict: 'email' })
+        .upsert([newUserRecord], { onConflict: 'id' })
         .select()
         .maybeSingle();
 
+      if (autoInsertError) {
+        logDb('AUTO-INSERT NOTICE', `Supabase users table RLS policy notice: ${autoInsertError.message}. Using Auth profile.`);
+      } else {
+        logDb('AUTO-INSERT SUCCESS', `Profile created in ${Date.now() - insertStartTime}ms.`);
+      }
+
       user = insertedUser || newUserRecord;
-      logDb('AUTO-INSERT SUCCESS', `Profile created in ${Date.now() - insertStartTime}ms.`);
     }
 
     logAuth('LOGIN SUCCESS', `User "${user.name}" (${user.email}) logged in successfully at ${logTime()}`);
+
+    // Ensure Welcome Scratch Coupon assigned on login
+    await couponController.assignWelcomeCoupon(user.id, user.email, user.name);
 
     return res.json({
       success: true,
@@ -267,13 +335,11 @@ const syncOAuthUser = async (req, res) => {
     const userId = id || crypto.randomUUID();
     const userName = name || cleanEmail.split('@')[0];
 
-    // Upsert into Supabase `users` database table
+    // Upsert into Supabase `users` database table (onConflict: 'id')
     const userPayload = {
       id: userId,
       name: userName,
       email: cleanEmail,
-      role: 'user',
-      subscription: 'free',
       created_at: new Date().toISOString(),
     };
 
@@ -281,15 +347,20 @@ const syncOAuthUser = async (req, res) => {
 
     const { data: syncedUser, error: upsertError } = await supabase
       .from('users')
-      .upsert([userPayload], { onConflict: 'email' })
+      .upsert([userPayload], { onConflict: 'id' })
       .select()
       .maybeSingle();
 
     if (upsertError) {
-      logDb('OAUTH UPSERT WARNING', `Supabase upsert warning: ${upsertError.message}`);
-    } else {
-      logDb('OAUTH UPSERT SUCCESS', `Google user details saved in Supabase database in ${Date.now() - syncStartTime}ms! ID: ${userId}`);
+      logDb('OAUTH UPSERT ERROR', `Supabase upsert FAILED: ${upsertError.message}`);
+      console.error(`[${logTime()}] ❌ Supabase OAuth upsert error detail:`, upsertError);
+      return res.status(500).json({
+        success: false,
+        message: `OAuth profile could not be saved to the database: ${upsertError.message}`,
+      });
     }
+
+    logDb('OAUTH UPSERT SUCCESS', `Google user details saved in Supabase database in ${Date.now() - syncStartTime}ms! ID: ${userId}`);
 
     const finalUser = syncedUser || userPayload;
     if (avatar) finalUser.avatar = avatar;
