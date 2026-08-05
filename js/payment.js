@@ -22,7 +22,8 @@ const PaymentGateway = {
 
   openCheckout: function (plan = 'yearly') {
     if (!AuthManager.currentUser) {
-      App.showToast('🔒 Account Sign In Required! Please log in first to purchase Pro Pass.', 'error');
+      App.showToast('🔒 Account Sign In Required! Please log in or register to purchase Pro Pass.', 'error');
+      AuthManager.openAuthModal('signin');
       return;
     }
     this.selectedPlan = plan;

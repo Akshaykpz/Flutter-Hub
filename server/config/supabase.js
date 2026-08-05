@@ -10,6 +10,7 @@ supabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
 
 const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_KEY;
 
+// Backend Admin Client using secret key from environment variables
 const supabase = createClient(supabaseUrl, secretKey || 'missing_key', {
   auth: {
     autoRefreshToken: false,
@@ -18,13 +19,10 @@ const supabase = createClient(supabaseUrl, secretKey || 'missing_key', {
 });
 
 if (!supabaseUrl || !secretKey) {
-
   console.warn('⚠️ Supabase credentials missing in environment variables!');
-
 } else {
-
   console.log(`⚡ Supabase Client Connected to: ${supabaseUrl}`);
-
 }
 
 module.exports = supabase;
+

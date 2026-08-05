@@ -357,7 +357,6 @@ const syncOAuthUser = async (req, res) => {
     const userId = existingUser?.id || id || crypto.randomUUID();
     const createdAt = existingUser?.created_at || new Date().toISOString();
 
-    // Upsert into Supabase `users` database table
     const userPayload = {
       id: userId,
       name: userName,

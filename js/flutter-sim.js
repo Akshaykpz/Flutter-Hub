@@ -236,8 +236,6 @@ const FlutterSim = {
             </div>
           </div>
         `;
-        break;
-
       case 'fab_menu':
         const fabId = `fab-${containerId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
         el.innerHTML = `

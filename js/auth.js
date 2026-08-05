@@ -5,9 +5,6 @@
 const AuthManager = {
   currentUser: null,
 
-  // Backend API URL (defaults to localhost:5000 or production backend URL)
-  backendUrl: window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://flutterhub-backend.onrender.com',
-
   init: function () {
     const saved = localStorage.getItem('flutterhub_user');
     if (saved) {
@@ -28,10 +25,8 @@ const AuthManager = {
       if (!e.target.closest('.nav-user-menu')) this.closeUserDropdown();
     });
 
-    // Check for Supabase OAuth Callback in URL hash or query params.
-    // Awaited so a returning Google user is reflected on the very first paint
-    // instead of flashing the logged-out "Sign In" button first.
-    this.handleOAuthCallback().then(() => this.updateUI());
+    // Check for Supabase OAuth Callback in URL hash or query params
+    this.handleOAuthCallback();
     this.updateUI();
 
     // Auto-restore Admin View on reload if logged in as Admin
@@ -49,109 +44,45 @@ const AuthManager = {
   handleOAuthCallback: async function () {
     const hash = window.location.hash || '';
     const search = window.location.search || '';
-    const hasOAuthParams = hash.includes('access_token') || hash.includes('token') || hash.includes('oauth') || search.includes('code') || search.includes('error');
-
-    console.log("🔍 [OAUTH CHECK] Checking URL for OAuth parameters...", { hash, search, hasOAuthParams });
 
     if (window.supabase) {
       try {
         const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
 
-        const processGoogleUser = async (u) => {
-          if (!u || !u.email) return;
-          const name = u.user_metadata?.full_name || u.user_metadata?.name || u.user_metadata?.given_name || (u.user_metadata?.given_name ? `${u.user_metadata.given_name} ${u.user_metadata.family_name || ''}`.trim() : null) || u.email.split('@')[0] || 'Google User';
-          const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || (name ? name[0].toUpperCase() : 'G');
-          const provider = (u.app_metadata?.provider || 'google').toUpperCase();
-
-          console.log(`%c🔑 [OAUTH CALLBACK RECEIVED] Provider: ${provider}`, "color: #3b82f6; font-weight: bold; font-size: 12px;");
-          console.log("👤 Name :", name);
-          console.log("✉️ Email:", u.email);
-
-          try {
-            const res = await fetch(AuthManager.backendUrl + '/api/auth/oauth-sync', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id: u.id,
-                name: name,
-                email: u.email,
-                avatar: avatar,
-                provider: u.app_metadata?.provider || 'google'
-              })
-            });
-            const json = await res.json();
-            if (json.success && json.data) {
-              this.setCurrentUser(json.data);
-              console.log(`%c✅ [OAUTH LOGIN SUCCESS] Provider: ${provider}`, "background: #10b981; color: #ffffff; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;");
-              console.log("👤 User Name :", this.currentUser.name);
-              console.log("✉️ User Email:", this.currentUser.email);
-              console.log("🆔 User ID   :", this.currentUser.id);
-              console.log("⚡ Supabase Database Sync Status: SUCCESS");
-              App.showToast(`Welcome ${this.currentUser.name}! Logged in via ${provider}.`, 'success');
-              if (window.location.hash.includes('access_token') || window.location.hash.includes('oauth') || window.location.search.includes('code')) {
-                history.replaceState(null, '', window.location.pathname);
-              }
-              return true;
-            }
-          } catch (syncErr) {
-            console.error("OAuth sync error:", syncErr);
-          }
-          return false;
-        };
-
-        // 1. Check active session immediately on page load
-        const { data: sessionData } = await client.auth.getSession();
-        if (sessionData?.session?.user) {
-          const success = await processGoogleUser(sessionData.session.user);
-          if (success) return;
-        }
-
-        // 2. Subscribe to auth state changes
+        // Subscribe to auth state changes (e.g. after Google OAuth redirect)
         client.auth.onAuthStateChange(async (event, session) => {
-          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
-            await processGoogleUser(session.user);
+          if (event === 'SIGNED_IN' && session?.user) {
+            const u = session.user;
+            const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Google User';
+
+            try {
+              const res = await fetch('/api/auth/oauth-sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  id: u.id,
+                  name: name,
+                  email: u.email,
+                  avatar: u.user_metadata?.avatar_url || name[0].toUpperCase(),
+                  provider: u.app_metadata?.provider || 'google'
+                })
+              });
+              const json = await res.json();
+              if (json.success) {
+                this.setCurrentUser(json.data);
+                App.showToast(`Welcome ${this.currentUser.name}! Logged in via Google.`, 'success');
+                App.switchView('user-dashboard');
+                if (window.location.hash.includes('access_token')) {
+                  history.replaceState(null, '', window.location.pathname);
+                }
+              }
+            } catch (syncErr) {
+              console.warn("OAuth sync endpoint error:", syncErr);
+            }
           }
         });
       } catch (err) {
-        console.warn("Supabase Auth listener notice:", err.message);
-      }
-    }
-
-    // Fallback: URL still shows OAuth params but Supabase never resolved a real session
-    // (e.g. slow network, or the token briefly failed to parse). We do NOT fabricate a
-    // fake user here — we just retry reading the real session a couple of times.
-    if (hasOAuthParams && window.supabase) {
-      console.log("%c🔑 [OAUTH RETRY] Re-checking for a real Supabase session...", "color: #3b82f6; font-weight: bold; font-size: 12px;");
-      try {
-        const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
-        for (let attempt = 0; attempt < 3; attempt++) {
-          await new Promise(r => setTimeout(r, 400));
-          const { data: retryData } = await client.auth.getSession();
-          if (retryData?.session?.user) {
-            const u = retryData.session.user;
-            const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email.split('@')[0] || 'Google User';
-            const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || name[0].toUpperCase();
-            try {
-              const res = await fetch(AuthManager.backendUrl + '/api/auth/oauth-sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: u.id, name, email: u.email, avatar, provider: u.app_metadata?.provider || 'google' })
-              });
-              const json = await res.json();
-              if (json.success && json.data) {
-                this.setCurrentUser(json.data);
-                App.showToast(`Welcome ${this.currentUser.name}! Signed in via Google.`, 'success');
-              }
-            } catch (syncErr) {
-              console.error("OAuth retry sync error:", syncErr);
-            }
-            break;
-          }
-        }
-      } catch (e) {
-        console.error("OAuth retry error:", e);
-      } finally {
-        history.replaceState(null, '', window.location.pathname);
+        console.warn("Supabase Auth listener error:", err.message);
       }
     }
   },
@@ -241,18 +172,6 @@ const AuthManager = {
       .replace(/'/g, '&#39;');
   },
 
-  getAvatarHTML: function (user, extraStyle = '') {
-    if (!user) return '?';
-    const name = this.escapeHTML(user.name || 'User');
-    const rawAvatar = user.avatar || (user.name || 'User')[0].toUpperCase();
-    if (typeof rawAvatar === 'string' && (rawAvatar.startsWith('http://') || rawAvatar.startsWith('https://') || rawAvatar.startsWith('data:image/'))) {
-      const safeUrl = this.escapeHTML(rawAvatar);
-      const initial = this.escapeHTML((user.name || 'U')[0].toUpperCase());
-      return `<img src="${safeUrl}" alt="${name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%; ${extraStyle}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.parentElement.innerText='${initial}';" />`;
-    }
-    return this.escapeHTML(rawAvatar);
-  },
-
   switchAuthModalTab: function (tab) {
     const tabs = ['signin', 'signup', 'admin'];
     tabs.forEach(t => {
@@ -305,7 +224,7 @@ const AuthManager = {
     }
 
     try {
-      const res = await fetch(AuthManager.backendUrl + '/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -348,7 +267,7 @@ const AuthManager = {
     }
 
     try {
-      const res = await fetch(AuthManager.backendUrl + '/api/auth/register', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })
@@ -439,12 +358,6 @@ const AuthManager = {
     this.closeLogoutModal();
     this.currentUser = null;
     localStorage.removeItem('flutterhub_user');
-    if (window.supabase) {
-      try {
-        const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
-        client.auth.signOut();
-      } catch (e) { }
-    }
     this.closeUserDropdown();
     this.updateUI();
     App.showToast('You have been logged out.', 'info');
@@ -560,7 +473,7 @@ const AuthManager = {
     }
 
     try {
-      const res = await fetch(AuthManager.backendUrl + '/api/auth/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -615,7 +528,7 @@ const AuthManager = {
     }
 
     try {
-      const res = await fetch(AuthManager.backendUrl + '/api/auth/register', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })
@@ -746,31 +659,26 @@ const AuthManager = {
     }, 1000);
   },
 
+  // Social Auth Handlers (Google & GitHub)
   loginWithGoogle: async function () {
-    App.showToast('Redirecting to Google Sign-In...', 'info');
-    console.log("%c🔑 [GOOGLE AUTH INITIATED] Opening Google OAuth Account Chooser...", "color: #4285f4; font-weight: bold; font-size: 12px;");
+    App.showToast('Redirecting to Google OAuth...', 'info');
+    try {
+      // 1. Try backend OAuth URL endpoint
+      const res = await fetch('/api/auth/provider/google');
+      const json = await res.json();
+      if (json.success && json.url) {
+        window.location.href = json.url;
+        return;
+      }
+    } catch (e) { }
 
-    // NOTE: do NOT put a "#..." hash on this URL. Supabase appends the real
-    // access_token as its own "#access_token=..." fragment on redirect, and a
-    // URL can only have one fragment — if ours is already there, the two get
-    // mashed together (e.g. "#oauth-callback#access_token=...") and Supabase's
-    // own SDK can no longer find "access_token" inside it, so no session is
-    // ever created after a "successful" Google login.
-    const redirectUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
-
-    // 1. Supabase Client OAuth with prompt: 'select_account' (Forces Google Account Chooser)
+    // 2. Direct Supabase JS Client fallback
     if (window.supabase) {
       try {
         const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
         const { data, error } = await client.auth.signInWithOAuth({
           provider: 'google',
-          options: {
-            redirectTo: redirectUrl,
-            queryParams: {
-              prompt: 'select_account',
-              access_type: 'offline'
-            }
-          }
+          options: { redirectTo: `${window.location.origin}/#oauth-callback` }
         });
         if (!error && data?.url) {
           window.location.href = data.url;
@@ -781,128 +689,38 @@ const AuthManager = {
       }
     }
 
-    // 2. Direct Fallback Navigation to Google Authorization endpoint
-    const supabaseUrl = 'https://yseyqbiiptripgjuoiyh.supabase.co';
-    const encodedRedirect = encodeURIComponent(redirectUrl);
-    const googleOAuthUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodedRedirect}&prompt=select_account`;
-
-    window.location.href = googleOAuthUrl;
-  },
-
-  openGoogleAuthModal: function () {
-    let modal = document.getElementById('google-auth-modal');
-    if (!modal) {
-      const modalHTML = `
-        <div id="google-auth-modal" class="modal" style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:99999; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:all 0.3s ease;">
-          <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:20px; padding:2.2rem; width:90%; max-width:440px; box-shadow:0 25px 50px rgba(0,0,0,0.6); position:relative;">
-            <button type="button" onclick="AuthManager.closeGoogleAuthModal()" style="position:absolute; top:18px; right:18px; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:50%; width:32px; height:32px; color:var(--text-muted); cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center;">&times;</button>
-            <div style="text-align:center; margin-bottom:1.5rem;">
-              <div style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; background:rgba(66, 133, 244, 0.12); border-radius:50%; margin-bottom:0.85rem; border:1px solid rgba(66,133,244,0.3);">
-                <svg width="28" height="28" viewBox="0 0 24 24">
-                  <path fill="#ea4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
-                  <path fill="#4285f4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
-                  <path fill="#fbbc05" d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
-                  <path fill="#34a853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
-                </svg>
-              </div>
-              <h3 style="font-size:1.35rem; font-weight:800; color:var(--text-bright); margin-bottom:0.35rem;">Sign In with Google Account</h3>
-              <p style="font-size:0.85rem; color:var(--text-muted);">Enter your Google user details to sync with Supabase database</p>
-            </div>
-            <form onsubmit="AuthManager.handleGoogleAuthSubmit(event)">
-              <div class="form-group" style="margin-bottom:1.25rem;">
-                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.4rem; display:block;">Google Account Full Name</label>
-                <input type="text" id="google-input-name" class="form-input" placeholder="e.g. Akshay KP" required style="width:100%; padding:0.75rem 1rem; border-radius:10px;" />
-              </div>
-              <div class="form-group" style="margin-bottom:1.5rem;">
-                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.4rem; display:block;">Google Email Address</label>
-                <input type="email" id="google-input-email" class="form-input" placeholder="e.g. akshay@gmail.com" required style="width:100%; padding:0.75rem 1rem; border-radius:10px;" />
-              </div>
-              <button type="submit" id="google-modal-submit-btn" class="btn btn-primary" style="width:100%; padding:0.85rem; font-weight:700; background:linear-gradient(135deg, #4285f4, #34a853); border:none; border-radius:12px; cursor:pointer;">
-                Sign In with Google &amp; Save to Supabase
-              </button>
-            </form>
-          </div>
-        </div>
-      `;
-      document.body.insertAdjacentHTML('beforeend', modalHTML);
-      modal = document.getElementById('google-auth-modal');
-    }
-    modal.style.opacity = '1';
-    modal.style.pointerEvents = 'auto';
-  },
-
-  closeGoogleAuthModal: function () {
-    const modal = document.getElementById('google-auth-modal');
-    if (modal) {
-      modal.style.opacity = '0';
-      modal.style.pointerEvents = 'none';
-    }
-  },
-
-  handleGoogleAuthSubmit: async function (e) {
-    e.preventDefault();
-    const name = document.getElementById('google-input-name')?.value.trim();
-    const email = document.getElementById('google-input-email')?.value.trim();
-    const btn = document.getElementById('google-modal-submit-btn');
-
-    if (!name || !email) return;
-
-    console.log("%c🔑 [GOOGLE AUTH ATTEMPT] Syncing Google User to Supabase Database...", "color: #4285f4; font-weight: bold; font-size: 12px;");
-    console.log("👤 Submitted Name :", name);
-    console.log("✉️ Submitted Email:", email);
-
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = 'Syncing Google User to Supabase...';
-    }
-
+    App.showToast('ℹ️ Google OAuth not configured in Supabase Dashboard. Logging in via developer profile.', 'info');
     try {
-      const res = await fetch(AuthManager.backendUrl + '/api/auth/oauth-sync', {
+      const syncRes = await fetch('/api/auth/oauth-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: 'google_' + btoa(email.toLowerCase()).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16),
-          name: name,
-          email: email.toLowerCase(),
-          avatar: name[0].toUpperCase(),
+          id: crypto.randomUUID(),
+          name: 'Google Developer',
+          email: 'user.google@flutterhub.dev',
+          avatar: 'G',
           provider: 'google'
         })
       });
-      const json = await res.json();
-      if (json.success && json.data) {
-        this.setCurrentUser(json.data);
-        console.log("%c✅ [GOOGLE AUTH SUCCESS]", "background: #34a853; color: #ffffff; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;");
-        console.log("👤 User Name :", this.currentUser.name);
-        console.log("✉️ User Email:", this.currentUser.email);
-        console.log("🆔 User ID   :", this.currentUser.id);
-        console.log("⚡ Supabase Database Sync Status: SUCCESS");
-        this.closeGoogleAuthModal();
-        this.closeAuthModal();
-        App.showToast(`Welcome ${this.currentUser.name}! Signed in via Google.`, 'success');
-        App.switchView('user-dashboard');
+      const syncJson = await syncRes.json();
+      if (syncJson.success) {
+        this.setCurrentUser(syncJson.data);
       } else {
-        throw new Error(json.message || 'Google Auth sync failed');
+        this.login('user.google@flutterhub.dev', 'Google Developer');
       }
-    } catch (err) {
-      console.error("%c❌ [GOOGLE AUTH FAILED]", "background: #ea4335; color: #ffffff; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;");
-      console.error("⚠️ Error Message:", err.message);
-      console.error("✉️ Failed Email :", email);
-      App.showToast(err.message || 'Failed to sign in with Google.', 'error');
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = 'Sign In with Google &amp; Save to Supabase';
-      }
+    } catch (e) {
+      this.login('user.google@flutterhub.dev', 'Google Developer');
     }
+
+    this.closeAuthModal();
+    App.switchView('user-dashboard');
   },
 
   loginWithGitHub: async function () {
     App.showToast('Redirecting to GitHub OAuth...', 'info');
-    console.log("%c🔑 [GITHUB AUTH ATTEMPT] Initiating GitHub OAuth...", "color: #2ea44f; font-weight: bold; font-size: 12px;");
-
     try {
       // 1. Try backend OAuth URL endpoint
-      const res = await fetch(AuthManager.backendUrl + '/api/auth/provider/github');
+      const res = await fetch('/api/auth/provider/github');
       const json = await res.json();
       if (json.success && json.url) {
         window.location.href = json.url;
@@ -929,7 +747,7 @@ const AuthManager = {
 
     App.showToast('ℹ️ GitHub OAuth not configured in Supabase Dashboard. Logging in via developer profile.', 'info');
     try {
-      const syncRes = await fetch(AuthManager.backendUrl + '/api/auth/oauth-sync', {
+      const syncRes = await fetch('/api/auth/oauth-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -943,17 +761,10 @@ const AuthManager = {
       const syncJson = await syncRes.json();
       if (syncJson.success) {
         this.setCurrentUser(syncJson.data);
-        console.log("%c✅ [GITHUB AUTH SUCCESS]", "background: #2ea44f; color: #ffffff; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;");
-        console.log("👤 User Name :", syncJson.data.name);
-        console.log("✉️ User Email:", syncJson.data.email);
-        console.log("🆔 User ID   :", syncJson.data.id);
-        console.log("⚡ Saved in Supabase `users` table successfully!");
       } else {
         this.login('user.github@flutterhub.dev', 'GitHub Developer');
       }
     } catch (e) {
-      console.error("%c❌ [GITHUB AUTH EXCEPTION]", "background: #ea4335; color: #ffffff; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;");
-      console.error("⚠️ Exception:", e.message);
       this.login('user.github@flutterhub.dev', 'GitHub Developer');
     }
 
@@ -1014,28 +825,22 @@ const AuthManager = {
       return;
     }
 
-
+    // Standard User UI (Restore default layout):
     if (navMenu) navMenu.style.display = 'flex';
-
     if (searchTrigger) searchTrigger.style.display = 'none';
-
     if (proContainer) proContainer.style.display = 'block';
 
     if (userBtn) {
-
       if (this.currentUser) {
-
         const name = this.escapeHTML(this.currentUser.name || 'User');
-
         const firstName = this.escapeHTML((this.currentUser.name || 'User').split(' ')[0]);
-
-        const avatarHTML = this.getAvatarHTML(this.currentUser);
+        const avatar = this.escapeHTML(this.currentUser.avatar || (this.currentUser.name || 'User')[0].toUpperCase());
 
         userBtn.innerHTML = `
           <div class="nav-user-menu">
             <button type="button" class="nav-user-trigger" onclick="AuthManager.toggleUserDropdown(event)" title="${name}" aria-haspopup="true">
               <div class="nav-user-avatar">
-                ${avatarHTML}
+                ${avatar}
               </div>
               <span class="nav-user-name">${firstName}</span>
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
@@ -1072,51 +877,14 @@ const AuthManager = {
     const pricingProBtn = document.getElementById('pricing-pro-btn');
     if (pricingProBtn) {
       if (isPro) {
-
         pricingProBtn.innerHTML = '✓ Pro Member Active';
-
         pricingProBtn.className = 'btn btn-secondary';
-
         pricingProBtn.onclick = () => App.switchView('user-dashboard');
-
       } else {
-
-
         pricingProBtn.innerHTML = 'Get Pro Access (₹29/mo)';
-
-
         pricingProBtn.className = 'btn btn-premium';
-
-
         pricingProBtn.onclick = () => PaymentGateway.openCheckout();
-
-
       }
     }
-
-    if (window.App && typeof window.App.updateNavDropdownsUI === 'function') {
-
-      App.updateNavDropdownsUI();
-
-    }
-  },
-
-  openPremiumProtectionModal: function () {
-
-    if (!this.currentUser) {
-
-      App.showToast('🔒 Account Sign In Required! Please log in to unlock Pro features.', 'info');
-
-      this.openAuthModal('signin');
-
-      return;
-
-
-    }
-
-    App.switchView('pricing');
-
-    PaymentGateway.openCheckout();
-
   }
 };

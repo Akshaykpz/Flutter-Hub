@@ -32,6 +32,9 @@ const FLUTTER_DATA = {
     { id: 'expansion', name: 'ExpansionTile & Accordions', count: 12 },
     { id: 'fab', name: 'FloatingActionButton & FAB', count: 10 },
     { id: 'material_cupertino', name: 'Material & Cupertino Widgets', count: 15 },
+    { id: 'search_bars', name: 'Search Bars & Filters', count: 10 },
+    { id: 'charts', name: 'Charts & Analytics', count: 15 },
+    { id: 'timelines', name: 'Timelines & Steppers', count: 12 },
   ],
 
   // ------------------------------------------------------------------------

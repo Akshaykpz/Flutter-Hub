@@ -76,7 +76,7 @@ const Dashboards = {
       <div class="glass-panel" style="padding:2rem; margin-bottom:2rem;">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
           <div style="display:flex; align-items:center; gap:1.25rem;">
-            <div class="avatar-large">${AuthManager.getAvatarHTML(user)}</div>
+            <div class="avatar-large">${AuthManager.getAvatarHTML ? AuthManager.getAvatarHTML(user) : (user.avatar || '👤')}</div>
             <div>
               <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-bright);">${user.name}</h2>
               <p style="color:var(--text-secondary); font-size:0.9rem;">${user.email} • Member since ${user.joinedDate}</p>
