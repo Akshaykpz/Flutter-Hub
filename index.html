@@ -121,14 +121,6 @@
       <!-- Action Buttons -->
       <div class="nav-actions">
 
-        <!-- Theme Toggle -->
-        <button id="theme-toggle-btn" class="btn-icon" onclick="App.toggleTheme()" title="Toggle Dark/Light Mode"
-          style="width:36px; height:36px;">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="5"></circle>
-          </svg>
-        </button>
-
         <!-- Get Premium CTA / Pro Status -->
         <div id="nav-pro-container">
           <button id="nav-get-pro-btn" class="btn btn-premium btn-sm" onclick="PaymentGateway.openCheckout()">Get
@@ -307,53 +299,57 @@
     <div id="view-pricing" class="app-view" style="display:none;">
       <section class="pricing-section container">
         <h1 style="font-size:3rem; font-weight:800; color:var(--text-bright);">Simple, Transparent Pricing</h1>
-        <p style="color:var(--text-secondary); max-width:540px; margin:0.75rem auto 0;">Unlock 1,000+ premium
-          components, UI screens, and full Flutter projects!</p>
+        <p style="color:var(--text-secondary); max-width:540px; margin:0.75rem auto 0;">Unlock all premium components, UI screens, AI developer tools, and full Flutter projects!</p>
 
-        <div class="pricing-grid"
-          style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:1.5rem; margin-top:2.5rem;">
+        <!-- Billing Cycle Toggle Selector -->
+        <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:2rem; margin-bottom:1rem;">
+          <div style="background:var(--bg-secondary); padding:4px; border-radius:30px; border:1px solid var(--border-color); display:flex; gap:4px;">
+            <button id="billing-btn-monthly" class="btn btn-sm btn-secondary" style="border-radius:24px; padding:0.4rem 1.2rem; font-size:0.85rem; font-weight:700;" onclick="App.switchPricingCycle('monthly')">Monthly Billing (₹29/mo)</button>
+            <button id="billing-btn-yearly" class="btn btn-sm btn-primary" style="border-radius:24px; padding:0.4rem 1.2rem; font-size:0.85rem; font-weight:700; background:linear-gradient(135deg,#38bdf8,#8b5cf6); border:none;" onclick="App.switchPricingCycle('yearly')">Yearly Pass (₹300/yr) <span style="background:#10b981; color:#000; padding:2px 6px; border-radius:10px; font-size:0.7rem; font-weight:800; margin-left:4px;">SAVE 20%</span></button>
+          </div>
+        </div>
+
+        <div class="pricing-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.5rem; margin-top:1.5rem; align-items:stretch;">
           <!-- Free Plan -->
-          <div class="pricing-card">
-            <h3 style="font-size:1.5rem; font-weight:700; color:var(--text-bright);">Free Starter</h3>
-            <p style="color:var(--text-muted); font-size:0.875rem;">Great for exploring basic UI snippets</p>
-            <div class="pricing-price">₹0 <span>/ forever</span></div>
-            <ul class="feature-list">
-              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg> Access to 200+ Free Components</li>
-              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg> Live Web Preview & Device Simulator</li>
-              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg> Basic State Management Blueprints</li>
+          <div class="pricing-card" style="display:flex; flex-direction:column; background:var(--bg-card); border:1px solid var(--border-color); border-radius:20px; padding:2rem;">
+            <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright);">Free Starter</h3>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">Great for exploring basic UI widgets</p>
+            <div class="pricing-price" style="font-size:2.4rem; font-weight:900; color:var(--text-bright); margin:1.25rem 0;">₹0 <span style="font-size:0.9rem; color:var(--text-muted); font-weight:600;">/ forever</span></div>
+            <ul class="feature-list" style="margin-bottom:1.5rem;">
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Access to Free Flutter Components</li>
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Live Web Preview & Device Simulator</li>
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Basic State Management Blueprints</li>
             </ul>
-            <button class="btn btn-secondary" style="margin-top:auto;" onclick="App.switchView('components')">Browse
-              Free Items</button>
+            <button class="btn btn-secondary" style="margin-top:auto; width:100%; border-radius:12px;" onclick="App.switchView('components')">Browse Free Items</button>
           </div>
 
-          <!-- Pro Plan -->
-          <div class="pricing-card featured">
-            <div class="popular-tag">MOST POPULAR</div>
-            <h3 style="font-size:1.5rem; font-weight:700; color:var(--text-bright);">Pro Developer Pass</h3>
-            <p style="color:var(--text-muted); font-size:0.875rem;">Unlimited access to all production components</p>
-            <div class="pricing-price">₹29 <span>/ month</span></div>
-            <ul class="feature-list">
-              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg> Instant .dart Code Copy & Downloads</li>
-              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg> All 1,000+ Components & Screens</li>
-              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg> AI Developer Tools Suite Included</li>
-              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg> Commercial App License Included</li>
+          <!-- Pro Monthly Plan -->
+          <div class="pricing-card" id="pricing-card-monthly" style="display:flex; flex-direction:column; background:var(--bg-card); border:1px solid var(--border-color); border-radius:20px; padding:2rem;">
+            <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright);">Pro Monthly Pass</h3>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">Flexible month-to-month access</p>
+            <div class="pricing-price" style="font-size:2.4rem; font-weight:900; color:var(--text-bright); margin:1.25rem 0;">₹29 <span style="font-size:0.9rem; color:var(--text-muted); font-weight:600;">/ month</span></div>
+            <ul class="feature-list" style="margin-bottom:1.5rem;">
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Instant .dart Code Copy & Downloads</li>
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> All Premium Components & Screens</li>
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> AI Developer Tools Suite Included</li>
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Commercial App License Included</li>
             </ul>
-            <button id="pricing-pro-btn" class="btn btn-premium" style="margin-top:auto;"
-              onclick="PaymentGateway.openCheckout('yearly')">Get Yearly Pass (₹300/yr)</button>
+            <button class="btn btn-secondary" style="margin-top:auto; width:100%; border-radius:12px; border:1px solid #38bdf8; color:#38bdf8; font-weight:700;" onclick="PaymentGateway.openCheckout('monthly')">Get Pro Monthly (₹29/mo)</button>
+          </div>
+
+          <!-- Pro Yearly Plan (BEST VALUE) -->
+          <div class="pricing-card featured" id="pricing-card-yearly" style="display:flex; flex-direction:column; background:linear-gradient(145deg, rgba(139,92,246,0.15), rgba(56,189,248,0.1)); border:2px solid #8b5cf6; border-radius:20px; padding:2rem; position:relative; box-shadow:0 0 30px rgba(139,92,246,0.25);">
+            <div class="popular-tag" style="position:absolute; top:-14px; right:20px; background:linear-gradient(135deg,#8b5cf6,#ec4899); color:#fff; padding:3px 12px; border-radius:12px; font-size:0.75rem; font-weight:800; letter-spacing:0.5px; box-shadow:0 4px 12px rgba(139,92,246,0.4);">MOST POPULAR • SAVE 20%</div>
+            <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright);">Pro Yearly Pass</h3>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">Full 1-year unlimited pass (Best Value)</p>
+            <div class="pricing-price" style="font-size:2.4rem; font-weight:900; color:#38bdf8; margin:1.25rem 0;">₹300 <span style="font-size:0.9rem; color:var(--text-muted); font-weight:600;">/ year</span> <span style="font-size:0.8rem; color:#10b981; font-weight:800; display:block; margin-top:2px;">(Just ₹25/mo — Save ₹48/yr)</span></div>
+            <ul class="feature-list" style="margin-bottom:1.5rem;">
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Everything in Pro Monthly Pass</li>
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Full Offline Source Zip Downloads</li>
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> All Future Component Updates</li>
+              <li class="feature-item"><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Priority 1-on-1 Code Support</li>
+            </ul>
+            <button id="pricing-pro-btn" class="btn btn-premium" style="margin-top:auto; width:100%; border-radius:12px; font-weight:800; font-size:0.95rem; background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; box-shadow:0 6px 20px rgba(245,158,11,0.4);" onclick="PaymentGateway.openCheckout('yearly')">Get Pro Yearly Pass (₹300/yr)</button>
           </div>
         </div>
       </section>

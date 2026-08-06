@@ -7,15 +7,18 @@ const App = {
   activeCategory: 'all',
 
   init: function () {
-    // 1. Initialize Theme
-    const savedTheme = localStorage.getItem('flutterhub_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    this.updateThemeToggleIcon(savedTheme);
+    // 1. Initialize fixed dark theme
+    document.documentElement.setAttribute('data-theme', 'dark');
 
 
     AuthManager.init();
     if (window.Dashboards && typeof window.Dashboards.initAdminOverrides === 'function') {
       Dashboards.initAdminOverrides();
+    }
+
+    if (window.FLUTTER_DATA && Array.isArray(FLUTTER_DATA.components)) {
+      FLUTTER_DATA.components = this.getUniqueComponents();
+      this.validateComponentData();
     }
 
 
@@ -82,6 +85,7 @@ const App = {
     const isPro = AuthManager.currentUser && AuthManager.currentUser.isPro;
     const badges = document.querySelectorAll('.nav-pro-badge');
     badges.forEach(b => {
+
       if (isPro) {
         b.textContent = '✓ UNLOCKED';
         b.className = 'badge badge-emerald nav-pro-badge';
@@ -96,6 +100,55 @@ const App = {
         b.style.border = '1px solid rgba(245, 158, 11, 0.35)';
       }
     });
+  },
+
+  switchPricingCycle: function (cycle) {
+
+    const monthlyBtn = document.getElementById('billing-btn-monthly');
+
+    const yearlyBtn = document.getElementById('billing-btn-yearly');
+
+    const monthlyCard = document.getElementById('pricing-card-monthly');
+
+    const yearlyCard = document.getElementById('pricing-card-yearly');
+
+    if (cycle === 'yearly') {
+      if (monthlyBtn) {
+        monthlyBtn.className = 'btn btn-sm btn-secondary';
+        monthlyBtn.style.background = 'transparent';
+      }
+      if (yearlyBtn) {
+        yearlyBtn.className = 'btn btn-sm btn-primary';
+        yearlyBtn.style.background = 'linear-gradient(135deg,#38bdf8,#8b5cf6)';
+      }
+      if (yearlyCard) {
+        yearlyCard.style.transform = 'scale(1.03)';
+        yearlyCard.style.borderColor = '#8b5cf6';
+        yearlyCard.style.boxShadow = '0 0 35px rgba(139,92,246,0.4)';
+      }
+      if (monthlyCard) {
+        monthlyCard.style.transform = 'scale(1.0)';
+        monthlyCard.style.boxShadow = 'none';
+      }
+    } else {
+      if (monthlyBtn) {
+        monthlyBtn.className = 'btn btn-sm btn-primary';
+        monthlyBtn.style.background = 'linear-gradient(135deg,#38bdf8,#8b5cf6)';
+      }
+      if (yearlyBtn) {
+        yearlyBtn.className = 'btn btn-sm btn-secondary';
+        yearlyBtn.style.background = 'transparent';
+      }
+      if (monthlyCard) {
+        monthlyCard.style.transform = 'scale(1.03)';
+        monthlyCard.style.borderColor = '#38bdf8';
+        monthlyCard.style.boxShadow = '0 0 35px rgba(56,189,248,0.3)';
+      }
+      if (yearlyCard) {
+        yearlyCard.style.transform = 'scale(1.0)';
+        yearlyCard.style.boxShadow = 'none';
+      }
+    }
   },
 
   // Simple & Spacious UI Design System Switcher
@@ -130,7 +183,7 @@ const App = {
 
     setTimeout(() => {
       card.className = systemId === 'bento' ? 'bento-card' : systemId === 'neumorphism' ? 'neu-card' : systemId === 'claymorphism' ? 'clay-card' : systemId === 'glassmorphism' ? 'glass-showcase-card' : 'aurora-card';
-      
+
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
           <span class="badge ${comp.isPremium ? 'badge-pro' : 'badge-cyan'}">${comp.badge}</span>
@@ -283,38 +336,83 @@ const App = {
     });
   },
 
+  componentSearchQuery: '',
 
-  toggleTheme: function () {
+  validateComponentData: function () {
+    if (!window.FLUTTER_DATA || !Array.isArray(FLUTTER_DATA.components)) return;
+    const seenIds = new Set();
+    const seenTitleCats = new Set();
+    const duplicatesFound = [];
 
-    const current = document.documentElement.getAttribute('data-theme');
+    FLUTTER_DATA.components.forEach(c => {
+      if (!c) return;
+      const titleKey = (c.title || '').trim().toLowerCase();
+      const catKey = (c.category || '').trim().toLowerCase();
+      const key = `${titleKey}||${catKey}`;
 
-    const next = current === 'light' ? 'dark' : 'light';
+      if (seenIds.has(c.id)) {
+        duplicatesFound.push(`Duplicate ID: ${c.id}`);
+      }
+      if (seenTitleCats.has(key)) {
+        duplicatesFound.push(`Duplicate Title+Category: '${c.title}' in '${c.category}'`);
+      }
+      seenIds.add(c.id);
+      seenTitleCats.add(key);
+    });
 
-    document.documentElement.setAttribute('data-theme', next);
-
-    localStorage.setItem('flutterhub_theme', next);
-
-    this.updateThemeToggleIcon(next);
-
-    this.showToast(`Switched to ${next} theme mode`, 'info');
-
-  },
-
-  updateThemeToggleIcon: function (theme) {
-    const btn = document.getElementById('theme-toggle-btn');
-    if (btn) {
-      btn.innerHTML = theme === 'dark'
-        ? `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>`
-        : `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+    if (duplicatesFound.length > 0) {
+      console.warn('⚠️ [Data Integrity Warning] Duplicate components detected:', duplicatesFound);
+    } else {
+      console.log('✅ [Data Integrity Verified] All components are unique (Count:', FLUTTER_DATA.components.length, ')');
     }
   },
 
-  componentSearchQuery: '',
+  getUniqueComponents: function () {
+    const enabledCatIds = (FLUTTER_DATA.categories || []).filter(cat => cat.enabled !== false).map(cat => cat.id);
+    const list = [];
+    const seenIds = new Set();
+    const seenTitleCats = new Set();
+
+    (FLUTTER_DATA.components || []).forEach(c => {
+      if (!c || !c.title) return;
+      if (!enabledCatIds.includes(c.category)) return;
+
+      const idKey = c.id ? c.id.trim() : '';
+      const titleKey = c.title.trim().toLowerCase();
+      const catKey = (c.category || '').trim().toLowerCase();
+      const titleCatKey = `${titleKey}||${catKey}`;
+
+      if (!seenIds.has(idKey) && !seenTitleCats.has(titleCatKey)) {
+        seenIds.add(idKey);
+        seenTitleCats.add(titleCatKey);
+        list.push(c);
+      }
+    });
+    return list;
+  },
+
+  // Favorites Real-Time Sync Event Listener
+  onFavoritesUpdated: function () {
+    // 1. Instantly update sidebar Favorites badge count & category list
+    this.renderCategoriesSidebar();
+
+    // 2. Instantly update component grid (cards update heart state / remove unfavorited cards on the spot!)
+    this.renderComponentGrid();
+
+    // 3. Keep user dashboard bookmarked list in sync when it is visible
+    if (this.currentView === 'user-dashboard' && window.Dashboards && typeof Dashboards.renderUserDashboard === 'function') {
+      Dashboards.renderUserDashboard();
+    }
+  },
 
   // Category Sidebar Renderer
   renderCategoriesSidebar: function () {
     const container = document.getElementById('category-sidebar-list');
     if (!container) return;
+
+    const uniqueComps = this.getUniqueComponents();
+    const favIds = AuthManager.getFavorites();
+    const favCount = favIds.length;
 
     let html = `
       <div style="padding:0.25rem 0.25rem 0.85rem 0.25rem; margin-bottom:0.85rem; border-bottom:1px solid var(--border-color);">
@@ -332,12 +430,17 @@ const App = {
 
       <button class="cat-btn ${this.activeCategory === 'all' ? 'active' : ''}" onclick="App.filterCategory('all')">
         <span>All Components</span>
-        <span class="cat-count">${FLUTTER_DATA.components.length}</span>
+        <span class="cat-count">${uniqueComps.length}</span>
+      </button>
+
+      <button class="cat-btn ${this.activeCategory === 'favorites' ? 'active' : ''}" onclick="App.filterCategory('favorites')">
+        <span style="display:flex; align-items:center; gap:6px;">❤️ Favorites</span>
+        <span id="fav-count-badge" class="cat-count" style="background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3);">${favCount}</span>
       </button>
     `;
 
     FLUTTER_DATA.categories.forEach(cat => {
-      const realCount = FLUTTER_DATA.components.filter(c => c.category === cat.id).length;
+      const realCount = uniqueComps.filter(c => c.category === cat.id).length;
       html += `
         <button class="cat-btn ${this.activeCategory === cat.id ? 'active' : ''}" onclick="App.filterCategory('${cat.id}')">
           <span>${cat.name}</span>
@@ -374,8 +477,25 @@ const App = {
     const container = document.getElementById('component-grid-container');
     if (!container) return;
 
-    let list = FLUTTER_DATA.components;
-    if (this.activeCategory !== 'all') {
+    let list = this.getUniqueComponents();
+
+    if (this.activeCategory === 'favorites') {
+      const favIds = AuthManager.normalizeFavorites(AuthManager.getFavorites());
+      list = list.filter(c => favIds.includes(AuthManager.normalizeFavoriteId(c.id)));
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column:1/-1; padding:4rem 2rem; text-align:center; color:var(--text-muted);" class="glass-panel">
+            <div style="width:56px; height:56px; border-radius:50%; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:0; color:#f43f5e;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#f43f5e" stroke="#f43f5e" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+              ❤️
+            </div>
+            <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright); margin-bottom:0.5rem;">No favorite components yet</h3>
+            <p style="margin-top:8px; color:var(--text-secondary); font-size:0.9rem;">Click the heart icon on any component card to save it here.</p>
+          </div>
+        `;
+        return;
+      }
+    } else if (this.activeCategory !== 'all') {
       list = list.filter(c => c.category === this.activeCategory);
     }
 
@@ -410,13 +530,43 @@ const App = {
     });
   },
 
+  renderFavoritesGrid: function (favoriteIds) {
+    const container = document.getElementById('component-grid-container');
+    if (!container || this.activeCategory !== 'favorites') return false;
+
+    const favIds = AuthManager.normalizeFavorites(Array.isArray(favoriteIds) ? favoriteIds : AuthManager.getFavorites());
+    const list = this.getUniqueComponents().filter(c => favIds.includes(AuthManager.normalizeFavoriteId(c.id)));
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column:1/-1; padding:4rem 2rem; text-align:center; color:var(--text-muted);" class="glass-panel">
+          <div style="width:56px; height:56px; border-radius:50%; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:0; color:#f43f5e;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="#f43f5e" stroke="#f43f5e" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+          </div>
+          <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright); margin-bottom:0.5rem;">No favorite components yet</h3>
+          <p style="margin-top:8px; color:var(--text-secondary); font-size:0.9rem;">Click the heart icon on any component card to save it here.</p>
+        </div>
+      `;
+      return true;
+    }
+
+    container.innerHTML = list.map(c => this.createComponentCardHTML(c)).join('');
+    list.forEach(c => {
+      if (c.simType && typeof FlutterSim !== 'undefined' && typeof FlutterSim.renderWidget === 'function') {
+        FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
+      }
+    });
+
+    return true;
+  },
+
   createComponentCardHTML: function (c) {
     const isPro = AuthManager.currentUser && AuthManager.currentUser.isPro;
     const isLocked = c.isPremium && !isPro;
-    const isBookmarked = AuthManager.currentUser && AuthManager.currentUser.bookmarks.includes(c.id);
+    const isBookmarked = AuthManager.isBookmarked(c.id);
 
     return `
-      <div class="component-card" style="border-radius:20px; overflow:hidden; border:1px solid ${isLocked ? 'rgba(245,158,11,0.3)' : 'var(--border-color)'}; background:var(--bg-secondary); box-shadow:var(--shadow-md);">
+      <div class="component-card" key="${c.id}" data-id="${c.id}" style="border-radius:20px; overflow:hidden; border:1px solid ${isLocked ? 'rgba(245,158,11,0.3)' : 'var(--border-color)'}; background:var(--bg-secondary); box-shadow:var(--shadow-md);">
         <!-- Top Card Header -->
         <div class="card-header" style="background:var(--bg-secondary); padding:0.85rem 1.25rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-subtle);">
           <div style="display:flex; align-items:center; gap:8px;">
@@ -425,7 +575,7 @@ const App = {
               ${c.isPremium ? (isPro ? '✓ UNLOCKED' : c.badge) : 'FREE'}
             </span>
           </div>
-          <button onclick="AuthManager.toggleBookmark('${c.id}')" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:${isBookmarked ? '#f43f5e' : 'var(--text-muted)'}; cursor:pointer; font-size:14px; transition:all 0.2s ease;" title="Save to Bookmarks">
+          <button data-fav-id="${c.id}" onclick="AuthManager.toggleBookmark('${c.id}', event)" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:${isBookmarked ? '#f43f5e' : 'var(--text-muted)'}; cursor:pointer; font-size:14px; transition:all 0.2s ease;" title="${isBookmarked ? 'Remove from Favorites' : 'Add to Favorites'}">
             ${isBookmarked ? '❤️' : '🤍'}
           </button>
         </div>
@@ -500,7 +650,7 @@ const App = {
 
     const isPro = AuthManager.currentUser && AuthManager.currentUser.isPro;
 
-    container.innerHTML = FLUTTER_DATA.screens.map(s => `
+    container.innerHTML = (FLUTTER_DATA.screens || []).map(s => `
       <div class="component-card">
         <div class="card-header">
           <div>
@@ -535,7 +685,7 @@ const App = {
     const container = document.getElementById('animations-grid');
     if (!container) return;
 
-    container.innerHTML = FLUTTER_DATA.animations.map(a => `
+    container.innerHTML = (FLUTTER_DATA.animations || []).map(a => `
       <div class="glass-panel" style="padding:1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
           <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-bright);">${a.title}</h3>
@@ -555,7 +705,7 @@ const App = {
     const container = document.getElementById('state-management-grid');
     if (!container) return;
 
-    container.innerHTML = FLUTTER_DATA.stateManagement.map(sm => `
+    container.innerHTML = (FLUTTER_DATA.stateManagement || []).map(sm => `
       <div class="glass-panel" style="padding:1.75rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
           <h3 style="font-size:1.2rem; font-weight:700; color:var(--text-bright);">${sm.title}</h3>
@@ -577,7 +727,7 @@ const App = {
 
     const isPro = AuthManager.currentUser && AuthManager.currentUser.isPro;
     const q = (searchQuery || '').toLowerCase().trim();
-    let list = FLUTTER_DATA.projects;
+    let list = FLUTTER_DATA.projects || [];
     if (q) {
       list = list.filter(p =>
         p.title.toLowerCase().includes(q) ||
@@ -641,7 +791,7 @@ const App = {
 
     // 1. Filter Questions
     const allQuestions = FLUTTER_DATA.interviewQuestions || [];
-    
+
     // Split questions into unlocked vs locked for non-Pro users
     let displayQuestions = allQuestions;
     if (!isPro) {
@@ -820,7 +970,7 @@ const App = {
     if (!container) return;
 
     const q = (searchQuery || '').toLowerCase().trim();
-    let list = FLUTTER_DATA.documentation;
+    let list = FLUTTER_DATA.documentation || [];
     if (q) {
       list = list.filter(d =>
         d.title.toLowerCase().includes(q) ||
@@ -867,7 +1017,7 @@ const App = {
     if (!container) return;
 
     const q = (searchQuery || '').toLowerCase().trim();
-    let list = FLUTTER_DATA.jobs;
+    let list = FLUTTER_DATA.jobs || [];
     if (q) {
       list = list.filter(j =>
         (j.company && j.company.toLowerCase().includes(q)) ||
@@ -921,7 +1071,7 @@ const App = {
   renderCommunity: function () {
     const groupsContainer = document.getElementById('community-groups-list');
     if (groupsContainer) {
-      groupsContainer.innerHTML = FLUTTER_DATA.communityGroups.map(g => `
+      groupsContainer.innerHTML = (FLUTTER_DATA.communityGroups || []).map(g => `
         <button class="cat-btn ${CommunityManager.activeGroup === g.name ? 'active' : ''}" style="text-align:left; display:flex; justify-content:space-between; width:100%;" onclick="CommunityManager.activeGroup = '${g.name}'; CommunityManager.renderFeed();">
           <span>${g.name}</span>
           <span class="cat-count">${g.members}</span>
@@ -1031,6 +1181,10 @@ const App = {
     }, 3000);
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.App = App;
+}
 
 // Bootstrap App when DOM ready
 document.addEventListener('DOMContentLoaded', () => App.init());

@@ -6,19 +6,51 @@ const Dashboards = {
   currentAdminTab: 'users',
   adminUsersCache: [],
 
+  dedupeComponents: function (arr) {
+    if (!Array.isArray(arr)) return [];
+    const seenIds = new Set();
+    const seenTitleCats = new Set();
+    const result = [];
+    arr.forEach(c => {
+      if (!c || !c.title) return;
+      const idKey = c.id ? c.id.trim() : '';
+      const titleKey = c.title.trim().toLowerCase();
+      const catKey = (c.category || '').trim().toLowerCase();
+      const titleCatKey = `${titleKey}||${catKey}`;
+
+      if (!seenIds.has(idKey) && !seenTitleCats.has(titleCatKey)) {
+        seenIds.add(idKey);
+        seenTitleCats.add(titleCatKey);
+        result.push(c);
+      }
+    });
+    return result;
+  },
+
   // Initialize & Load Saved Admin Overrides from LocalStorage
   initAdminOverrides: function () {
     try {
       const saved = localStorage.getItem('flutterhub_admin_overrides');
       if (saved) {
         const overrides = JSON.parse(saved);
-        if (overrides.components && Array.isArray(overrides.components)) FLUTTER_DATA.components = overrides.components;
-        if (overrides.documentation && Array.isArray(overrides.documentation)) FLUTTER_DATA.documentation = overrides.documentation;
-        if (overrides.aiTools && Array.isArray(overrides.aiTools)) FLUTTER_DATA.aiTools = overrides.aiTools;
-        if (overrides.projects && Array.isArray(overrides.projects)) FLUTTER_DATA.projects = overrides.projects;
-        if (overrides.jobs && Array.isArray(overrides.jobs)) FLUTTER_DATA.jobs = overrides.jobs;
-        if (overrides.downloads && Array.isArray(overrides.downloads)) FLUTTER_DATA.downloads = overrides.downloads;
-        if (overrides.roadmaps) FLUTTER_DATA.roadmaps = overrides.roadmaps;
+        if (overrides.components && Array.isArray(overrides.components) && overrides.components.length > 0) {
+          const validIds = new Set((FLUTTER_DATA.components || []).map(c => c.id));
+          const hasLegacy = overrides.components.some(c => !c.id || !validIds.has(c.id));
+          if (hasLegacy) {
+            delete overrides.components;
+            localStorage.setItem('flutterhub_admin_overrides', JSON.stringify(overrides));
+          } else {
+            FLUTTER_DATA.components = this.dedupeComponents(overrides.components);
+          }
+        }
+        if (overrides.documentation && Array.isArray(overrides.documentation) && overrides.documentation.length > 0) FLUTTER_DATA.documentation = overrides.documentation;
+        if (overrides.aiTools && Array.isArray(overrides.aiTools) && overrides.aiTools.length > 0) FLUTTER_DATA.aiTools = overrides.aiTools;
+        if (overrides.projects && Array.isArray(overrides.projects) && overrides.projects.length > 0) FLUTTER_DATA.projects = overrides.projects;
+        if (overrides.jobs && Array.isArray(overrides.jobs) && overrides.jobs.length > 0) FLUTTER_DATA.jobs = overrides.jobs;
+        if (overrides.downloads && Array.isArray(overrides.downloads) && overrides.downloads.length > 0) FLUTTER_DATA.downloads = overrides.downloads;
+        if (overrides.roadmaps && overrides.roadmaps.free && overrides.roadmaps.free.length > 0) FLUTTER_DATA.roadmaps = overrides.roadmaps;
+      } else {
+        FLUTTER_DATA.components = this.dedupeComponents(FLUTTER_DATA.components);
       }
     } catch (e) {
       console.warn("Failed to parse admin overrides from localStorage:", e);
@@ -72,6 +104,8 @@ const Dashboards = {
       return;
     }
 
+    const favoriteIds = AuthManager.normalizeFavorites(AuthManager.getFavorites());
+
     container.innerHTML = `
       <div class="glass-panel" style="padding:2rem; margin-bottom:2rem;">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
@@ -94,7 +128,7 @@ const Dashboards = {
       <div class="kpi-grid">
         <div class="kpi-card">
           <span class="kpi-title">Saved Bookmarks</span>
-          <span class="kpi-value">${user.bookmarks.length}</span>
+          <span class="kpi-value">${favoriteIds.length}</span>
           <span class="kpi-trend positive">Saved components</span>
         </div>
         <div class="kpi-card purple">
@@ -127,10 +161,10 @@ const Dashboards = {
 
       <h3 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:var(--text-bright);">Your Bookmarked Components</h3>
       <div class="component-grid">
-        ${user.bookmarks.length === 0
+        ${favoriteIds.length === 0
         ? `<div style="grid-column:1/-1; padding:3rem; text-align:center; color:var(--text-muted); background:var(--bg-card); border-radius:16px;">No bookmarked components yet! Click the heart icon on any component to save it here.</div>`
         : FLUTTER_DATA.components
-          .filter(c => user.bookmarks.includes(c.id))
+          .filter(c => favoriteIds.includes(AuthManager.normalizeFavoriteId(c.id)))
           .map(c => App.createComponentCardHTML(c))
           .join('')
       }
@@ -144,9 +178,9 @@ const Dashboards = {
       });
     }
 
-    if (user.bookmarks.length > 0) {
+    if (favoriteIds.length > 0) {
       FLUTTER_DATA.components
-        .filter(c => user.bookmarks.includes(c.id))
+        .filter(c => favoriteIds.includes(AuthManager.normalizeFavoriteId(c.id)))
         .forEach(c => {
           if (c.simType) FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
         });

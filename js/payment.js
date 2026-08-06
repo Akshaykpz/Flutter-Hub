@@ -218,8 +218,11 @@ const PaymentGateway = {
     }
 
     setTimeout(() => {
+
       self.resetButtonState();
+
     }, 1500);
+
   },
 
   verifyPaymentOnBackend: async function (paymentResponse) {

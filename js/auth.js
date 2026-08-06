@@ -4,15 +4,20 @@
 
 const AuthManager = {
   currentUser: null,
+  authInitializing: false,
+  oauthClient: null,
 
   init: function () {
     const saved = localStorage.getItem('flutterhub_user');
     if (saved) {
       try {
-        this.currentUser = JSON.parse(saved);
-        if (this.isDemoUser(this.currentUser)) {
-          this.currentUser = null;
-          localStorage.removeItem('flutterhub_user');
+        const parsed = JSON.parse(saved);
+        if (parsed) {
+          this.currentUser = this.normalizeUser(parsed);
+          if (this.isDemoUser(this.currentUser)) {
+            this.currentUser = null;
+            localStorage.removeItem('flutterhub_user');
+          }
         }
       } catch (e) {
         this.currentUser = null;
@@ -25,7 +30,8 @@ const AuthManager = {
       if (!e.target.closest('.nav-user-menu')) this.closeUserDropdown();
     });
 
-    // Check for Supabase OAuth Callback in URL hash or query params
+    // Check for Supabase OAuth callback/session before showing a clickable Sign In button.
+    this.authInitializing = !this.currentUser && this.shouldRestoreOAuthSession();
     this.handleOAuthCallback();
     this.updateUI();
 
@@ -41,49 +47,177 @@ const AuthManager = {
     }
   },
 
-  handleOAuthCallback: async function () {
-    const hash = window.location.hash || '';
+  shouldRestoreOAuthSession: function () {
+    if (!window.supabase) return false;
+    const href = window.location.href || '';
     const search = window.location.search || '';
+    const pendingProvider = sessionStorage.getItem('flutterhub_oauth_pending');
 
-    if (window.supabase) {
-      try {
-        const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
+    return !!(
+      pendingProvider ||
+      search.includes('code=') ||
+      href.includes('access_token=') ||
+      href.includes('refresh_token=')
+    );
+  },
 
-        // Subscribe to auth state changes (e.g. after Google OAuth redirect)
-        client.auth.onAuthStateChange(async (event, session) => {
-          if (event === 'SIGNED_IN' && session?.user) {
-            const u = session.user;
-            const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Google User';
+  getOAuthClient: function () {
+    if (!window.supabase) return null;
+    if (!this.oauthClient) {
+      this.oauthClient = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
+    }
+    return this.oauthClient;
+  },
 
-            try {
-              const res = await fetch('/api/auth/oauth-sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  id: u.id,
-                  name: name,
-                  email: u.email,
-                  avatar: u.user_metadata?.avatar_url || name[0].toUpperCase(),
-                  provider: u.app_metadata?.provider || 'google'
-                })
-              });
-              const json = await res.json();
-              if (json.success) {
-                this.setCurrentUser(json.data);
-                App.showToast(`Welcome ${this.currentUser.name}! Logged in via Google.`, 'success');
-                App.switchView('user-dashboard');
-                if (window.location.hash.includes('access_token')) {
-                  history.replaceState(null, '', window.location.pathname);
-                }
-              }
-            } catch (syncErr) {
-              console.warn("OAuth sync endpoint error:", syncErr);
-            }
-          }
+  extractGoogleName: function (u) {
+    if (!u) return 'Google User';
+    const meta = u.user_metadata || {};
+    const identityData = u.identities?.[0]?.identity_data || {};
+
+    let name = meta.full_name || meta.name || meta.display_name || identityData.full_name || identityData.name;
+
+    if (!name && (meta.given_name || identityData.given_name)) {
+      const given = meta.given_name || identityData.given_name;
+      const family = meta.family_name || identityData.family_name || '';
+      name = `${given} ${family}`.trim();
+    }
+
+    if (!name && u.email) {
+      name = u.email.split('@')[0];
+    }
+
+    return name || 'Google User';
+  },
+
+  syncSupabaseUserSession: async function (u) {
+    if (!u) return;
+    const name = this.extractGoogleName(u);
+    const email = u.email || '';
+    const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || u.identities?.[0]?.identity_data?.avatar_url || name[0].toUpperCase();
+    const existingBookmarks = this.getFavorites();
+    const provisionalUser = {
+      id: u.id,
+      name,
+      email,
+      avatar,
+      provider: u.app_metadata?.provider || 'google'
+    };
+
+    // Supabase has confirmed the user. Update the UI now; backend profile sync can finish after.
+    this.setCurrentUser(provisionalUser, {
+      bookmarks: existingBookmarks,
+      downloadsCount: this.currentUser?.downloadsCount || 0,
+      joinedDate: this.currentUser?.joinedDate
+    });
+    this.authInitializing = false;
+    this.updateUI();
+    sessionStorage.removeItem('flutterhub_oauth_pending');
+
+    try {
+      const res = await fetch('/api/auth/oauth-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: u.id,
+          name: name,
+          email: email,
+          avatar: avatar,
+          provider: u.app_metadata?.provider || 'google'
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        this.setCurrentUser(json.data, {
+          bookmarks: this.getFavorites(),
+          downloadsCount: this.currentUser?.downloadsCount || 0,
+          joinedDate: this.currentUser?.joinedDate,
+          isPro: this.currentUser?.isPro
         });
-      } catch (err) {
-        console.warn("Supabase Auth listener error:", err.message);
+      } else {
+        this.setCurrentUser(provisionalUser, { bookmarks: this.getFavorites() });
       }
+    } catch (syncErr) {
+      console.warn("OAuth sync endpoint notice:", syncErr);
+      this.setCurrentUser(provisionalUser, { bookmarks: this.getFavorites() });
+    }
+
+    if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
+      history.replaceState(null, '', window.location.pathname);
+    }
+  },
+
+  handleOAuthCallback: async function () {
+    if (!window.supabase) {
+      this.authInitializing = false;
+      this.updateUI();
+      return;
+    }
+
+    try {
+      const client = this.getOAuthClient();
+      if (!client) return;
+
+      const href = window.location.href || '';
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+
+      // 1. Handle PKCE code parameter (?code=...)
+      if (search.includes('code=')) {
+        const urlParams = new URLSearchParams(search);
+        const code = urlParams.get('code');
+        if (code) {
+          try {
+            const { data, error } = await client.auth.exchangeCodeForSession(code);
+            if (data?.session?.user) {
+              await this.syncSupabaseUserSession(data.session.user);
+              return;
+            }
+          } catch (e) {
+            console.warn("PKCE code exchange notice:", e.message);
+          }
+        }
+      }
+
+      // 2. Handle hash fragments containing access_token= (including legacy double hash URLs)
+      if (href.includes('access_token=')) {
+        const tokenString = href.substring(href.indexOf('access_token='));
+        const params = new URLSearchParams(tokenString);
+        const accessToken = params.get('access_token');
+
+        if (accessToken) {
+          try {
+            const { data, error } = await client.auth.getUser(accessToken);
+            if (data?.user) {
+              await this.syncSupabaseUserSession(data.user);
+              return;
+            }
+          } catch (e) {
+            console.warn("Access token user fetch notice:", e.message);
+          }
+        }
+      }
+
+      // 3. Restore session from active Supabase client on load / redirect
+      const getSessionRes = await client.auth.getSession();
+      if (getSessionRes?.data?.session?.user) {
+        await this.syncSupabaseUserSession(getSessionRes.data.session.user);
+      } else {
+        this.authInitializing = false;
+        this.updateUI();
+        sessionStorage.removeItem('flutterhub_oauth_pending');
+      }
+
+      // 4. Subscribe to auth state changes (e.g. after Google OAuth redirect)
+      client.auth.onAuthStateChange(async (event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+          await this.syncSupabaseUserSession(session.user);
+        }
+      });
+    } catch (err) {
+      console.warn("Supabase Auth listener notice:", err.message);
+      this.authInitializing = false;
+      this.updateUI();
+      sessionStorage.removeItem('flutterhub_oauth_pending');
     }
   },
 
@@ -98,11 +232,60 @@ const AuthManager = {
     return email === 'dev@flutterhub.io' || email === 'developer@flutterhub.dev' || name === 'developer';
   },
 
+  getAvatarHTML: function (user) {
+    if (!user) return '<span style="font-weight:800; text-transform:uppercase; font-size:12px; color:#fff;">U</span>';
+    const avatar = (user.avatar || '').trim();
+    const name = (user.name || user.email || 'User').trim();
+    const initial = (name[0] || 'U').toUpperCase();
+
+    if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image')) {
+      return `<img src="${avatar}" alt="${this.escapeHTML(name)}" style="width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;" onerror="this.outerHTML='<span style=\\'font-weight:800; text-transform:uppercase; font-size:12px; color:#fff;\\'>${initial}</span>'" />`;
+    }
+
+    return `<span style="font-weight:800; text-transform:uppercase; font-size:12px; color:#fff; line-height:1; display:flex; align-items:center; justify-content:center; width:100%; height:100%;">${initial}</span>`;
+  },
+
+  normalizeFavoriteId: function (value) {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    if (typeof value === 'object') {
+      if (typeof value.id !== 'undefined') return this.normalizeFavoriteId(value.id);
+      if (typeof value.key !== 'undefined') return this.normalizeFavoriteId(value.key);
+    }
+    return String(value).trim();
+  },
+
+  normalizeFavorites: function (favorites) {
+    if (!Array.isArray(favorites)) return [];
+
+    const normalized = [];
+    const seen = new Set();
+
+    favorites.forEach((favorite) => {
+      const key = this.normalizeFavoriteId(favorite);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      normalized.push(key);
+    });
+
+    return normalized;
+  },
+
   normalizeUser: function (data, fallback = {}) {
     const name = data?.name || data?.full_name || fallback.name || fallback.email?.split('@')[0] || 'User';
     const email = data?.email || fallback.email || '';
     const isAdmin = data?.role === 'admin' || data?.isAdmin || email.toLowerCase() === 'admin@admin.com' || fallback.isAdmin || false;
     const isPro = isAdmin || data?.isPro || data?.isSubscribed || data?.subscription === 'pro' || false;
+
+    let rawAvatar = data?.avatar || fallback.avatar || '';
+    let cleanAvatar = '';
+    if (typeof rawAvatar === 'string' && (rawAvatar.startsWith('http://') || rawAvatar.startsWith('https://') || rawAvatar.startsWith('data:image'))) {
+      cleanAvatar = rawAvatar;
+    } else {
+      cleanAvatar = (name[0] || 'U').toUpperCase();
+    }
+
     return {
       id: data?.id || data?._id || fallback.id || null,
       name,
@@ -110,8 +293,8 @@ const AuthManager = {
       token: data?.token || fallback.token || null,
       isPro,
       isAdmin,
-      avatar: data?.avatar || (isAdmin ? '👑' : name[0].toUpperCase()),
-      bookmarks: fallback.bookmarks || data?.bookmarks || [],
+      avatar: cleanAvatar,
+      bookmarks: this.normalizeFavorites(Array.isArray(fallback.bookmarks) ? fallback.bookmarks : (data?.bookmarks || [])),
       downloadsCount: fallback.downloadsCount || data?.downloadsCount || 0,
       joinedDate: fallback.joinedDate || 'July 2026',
       subscriptionExpiresAt: data?.subscriptionExpiresAt || data?.subscription_expires_at || null
@@ -357,6 +540,8 @@ const AuthManager = {
   performLogout: function () {
     this.closeLogoutModal();
     this.currentUser = null;
+    this.authInitializing = false;
+    sessionStorage.removeItem('flutterhub_oauth_pending');
     localStorage.removeItem('flutterhub_user');
     this.closeUserDropdown();
     this.updateUI();
@@ -661,6 +846,10 @@ const AuthManager = {
 
   // Social Auth Handlers (Google & GitHub)
   loginWithGoogle: async function () {
+    if (this.authInitializing) return;
+    this.authInitializing = true;
+    sessionStorage.setItem('flutterhub_oauth_pending', 'google');
+    this.updateUI();
     App.showToast('Redirecting to Google OAuth...', 'info');
     try {
       // 1. Try backend OAuth URL endpoint
@@ -675,10 +864,10 @@ const AuthManager = {
     // 2. Direct Supabase JS Client fallback
     if (window.supabase) {
       try {
-        const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
+        const client = this.getOAuthClient();
         const { data, error } = await client.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: `${window.location.origin}/#oauth-callback` }
+          options: { redirectTo: `${window.location.origin}/` }
         });
         if (!error && data?.url) {
           window.location.href = data.url;
@@ -689,6 +878,9 @@ const AuthManager = {
       }
     }
 
+    this.authInitializing = false;
+    sessionStorage.removeItem('flutterhub_oauth_pending');
+    this.updateUI();
     App.showToast('ℹ️ Google OAuth not configured in Supabase Dashboard. Logging in via developer profile.', 'info');
     try {
       const syncRes = await fetch('/api/auth/oauth-sync', {
@@ -785,17 +977,230 @@ const AuthManager = {
     App.showToast('🎉 Congratulations! You are now a FlutterHub Pro member!', 'success');
   },
 
-  toggleBookmark: function (id) {
-    if (!this.currentUser) return;
-    const idx = this.currentUser.bookmarks.indexOf(id);
-    if (idx > -1) {
-      this.currentUser.bookmarks.splice(idx, 1);
-      App.showToast('Removed from Bookmarks', 'info');
-    } else {
-      this.currentUser.bookmarks.push(id);
-      App.showToast('Saved to Bookmarks! ❤️', 'success');
+  toggleBookmark: function (id, e) {
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation();
     }
-    this.saveSession();
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
+
+    const normalizedId = this.normalizeFavoriteId(id);
+    if (!normalizedId) return;
+
+    const currentFavs = this.getFavorites();
+    const isFav = currentFavs.some(favId => String(favId) === normalizedId);
+    const willBeFavorite = !isFav;
+
+    // Immutable array state update
+    let updatedFavs;
+    if (isFav) {
+      updatedFavs = currentFavs.filter(favId => String(favId) !== normalizedId);
+      if (window.App && typeof App.showToast === 'function') {
+        App.showToast('Removed from Favorites successfully', 'info');
+      }
+    } else {
+      updatedFavs = [...currentFavs, normalizedId];
+      if (window.App && typeof App.showToast === 'function') {
+        App.showToast('Added to Favorites successfully', 'success');
+      }
+    }
+
+    if (this.currentUser) {
+      this.currentUser.bookmarks = updatedFavs;
+      this.saveSession();
+    } else {
+      try {
+        localStorage.setItem('flutterhub_guest_bookmarks', JSON.stringify(updatedFavs));
+      } catch (err) {}
+    }
+
+    const clickedCard = e && e.target && typeof e.target.closest === 'function'
+      ? e.target.closest('.component-card')
+      : null;
+
+    const renderedFavoritesGrid = typeof App !== 'undefined' && App.activeCategory === 'favorites' && typeof App.renderFavoritesGrid === 'function'
+      ? App.renderFavoritesGrid(updatedFavs)
+      : this.syncVisibleFavoriteSections(updatedFavs);
+    this.updateFavoriteCountBadge(updatedFavs.length);
+
+    if (renderedFavoritesGrid) {
+      this.refreshFavoriteState({ skipComponentGrid: true });
+      return;
+    }
+
+    this.updateFavoriteButtons(id, willBeFavorite);
+    if (!willBeFavorite) {
+      this.removeFavoriteCardFromVisibleLists(id, clickedCard);
+    }
+    this.refreshFavoriteState();
+  },
+
+  isBookmarked: function (id) {
+    if (!id) return false;
+    const normalizedId = this.normalizeFavoriteId(id);
+    const favs = this.getFavorites();
+    return favs.some(favId => this.normalizeFavoriteId(favId) === normalizedId);
+  },
+
+  getFavorites: function () {
+    if (this.currentUser) {
+      if (!Array.isArray(this.currentUser.bookmarks)) {
+        this.currentUser.bookmarks = [];
+      }
+      this.currentUser.bookmarks = this.normalizeFavorites(this.currentUser.bookmarks);
+      return this.currentUser.bookmarks;
+    }
+    try {
+      const guest = JSON.parse(localStorage.getItem('flutterhub_guest_bookmarks') || '[]');
+      return this.normalizeFavorites(Array.isArray(guest) ? guest : []);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  updateFavoriteButtons: function (id, isFavorite) {
+    const selector = `[data-fav-id="${String(id).replace(/"/g, '\\"')}"]`;
+    document.querySelectorAll(selector).forEach(btn => {
+      btn.innerHTML = isFavorite ? '❤️' : '🤍';
+      btn.style.color = isFavorite ? '#f43f5e' : 'var(--text-muted)';
+      btn.title = isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+    });
+  },
+
+  updateFavoriteCountBadge: function (count) {
+    const badge = document.getElementById('fav-count-badge');
+    if (badge) {
+      badge.textContent = count;
+    }
+  },
+
+  removeFavoriteCardFromVisibleLists: function (id, clickedCard) {
+    const selector = `.component-card[data-id="${String(id).replace(/"/g, '\\"')}"]`;
+    const shouldRemoveFromComponents = window.App && App.activeCategory === 'favorites';
+    const shouldRemoveFromDashboard = window.App && App.currentView === 'user-dashboard';
+
+    if (!shouldRemoveFromComponents && !shouldRemoveFromDashboard) return;
+
+    if (clickedCard && shouldRemoveFromComponents && typeof clickedCard.remove === 'function') {
+      clickedCard.remove();
+    } else if (clickedCard && typeof clickedCard.remove === 'function') {
+      const clickedGrid = clickedCard.closest('.component-grid');
+      const clickedInDashboard = clickedGrid && clickedGrid.closest('#user-dashboard-content') && shouldRemoveFromDashboard;
+
+      if (clickedInDashboard) {
+        clickedCard.remove();
+      }
+    }
+
+    document.querySelectorAll(selector).forEach(card => {
+      const grid = card.closest('.component-grid');
+      const isComponentsGrid = grid && grid.id === 'component-grid-container';
+      const isDashboardGrid = grid && grid.closest('#user-dashboard-content');
+
+      if ((shouldRemoveFromComponents && isComponentsGrid) || (shouldRemoveFromDashboard && isDashboardGrid)) {
+        card.remove();
+      }
+    });
+  },
+
+  isFavoritesGridVisible: function () {
+    const container = document.getElementById('component-grid-container');
+    const componentsView = document.getElementById('view-components');
+    const isComponentsViewVisible = !componentsView || componentsView.style.display !== 'none';
+
+    return !!(
+      window.App &&
+      container &&
+      App.activeCategory === 'favorites' &&
+      isComponentsViewVisible
+    );
+  },
+
+  renderVisibleFavoritesGrid: function (favoriteIds) {
+    if (!this.isFavoritesGridVisible() || !window.App || typeof App.createComponentCardHTML !== 'function') {
+      return false;
+    }
+
+    const container = document.getElementById('component-grid-container');
+    if (!container) return false;
+
+    const ids = this.normalizeFavorites(Array.isArray(favoriteIds) ? favoriteIds : this.getFavorites());
+    const components = typeof App.getUniqueComponents === 'function'
+      ? App.getUniqueComponents()
+      : ((window.FLUTTER_DATA && FLUTTER_DATA.components) || []);
+    const list = components.filter(c => ids.includes(this.normalizeFavoriteId(c.id)));
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column:1/-1; padding:4rem 2rem; text-align:center; color:var(--text-muted);" class="glass-panel">
+          <div style="width:56px; height:56px; border-radius:50%; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:0; color:#f43f5e;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="#f43f5e" stroke="#f43f5e" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+            ❤️
+          </div>
+          <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright); margin-bottom:0.5rem;">No favorite components yet</h3>
+          <p style="margin-top:8px; color:var(--text-secondary); font-size:0.9rem;">Click the heart icon on any component card to save it here.</p>
+        </div>
+      `;
+      return true;
+    }
+
+    container.innerHTML = list.map(c => App.createComponentCardHTML(c)).join('');
+    list.forEach(c => {
+      if (c.simType && window.FlutterSim && typeof FlutterSim.renderWidget === 'function') {
+        FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
+      }
+    });
+    return true;
+  },
+
+  syncVisibleFavoriteSections: function (favoriteIds) {
+    const renderedComponentFavorites = window.App && typeof App.renderFavoritesGrid === 'function'
+      ? App.renderFavoritesGrid(favoriteIds)
+      : this.renderVisibleFavoritesGrid(favoriteIds);
+
+    if (
+      window.App &&
+      App.currentView === 'user-dashboard' &&
+      window.Dashboards &&
+      typeof Dashboards.renderUserDashboard === 'function'
+    ) {
+      Dashboards.renderUserDashboard();
+    }
+
+    return renderedComponentFavorites;
+  },
+
+  refreshFavoriteState: function (options = {}) {
+    if (window.App && typeof App.renderCategoriesSidebar === 'function') {
+      App.renderCategoriesSidebar();
+    }
+    if (!options.skipComponentGrid && window.App && typeof App.renderComponentGrid === 'function') {
+      App.renderComponentGrid();
+    }
+    if (window.App && typeof App.renderUIScreens === 'function') {
+      App.renderUIScreens();
+    }
+    if (
+      window.App &&
+      App.currentView === 'user-dashboard' &&
+      window.Dashboards &&
+      typeof Dashboards.renderUserDashboard === 'function'
+    ) {
+      Dashboards.renderUserDashboard();
+    }
+  },
+
+  updateSocialAuthLoadingButtons: function () {
+    document.querySelectorAll('button[onclick*="AuthManager.loginWithGoogle"]').forEach(btn => {
+      btn.disabled = this.authInitializing;
+      btn.style.opacity = this.authInitializing ? '0.7' : '';
+      btn.style.cursor = this.authInitializing ? 'not-allowed' : '';
+      const label = btn.querySelector('span');
+      if (label) {
+        label.textContent = this.authInitializing ? 'Signing in...' : 'Google';
+      }
+    });
   },
 
   updateUI: function () {
@@ -833,25 +1238,34 @@ const AuthManager = {
     if (userBtn) {
       if (this.currentUser) {
         const name = this.escapeHTML(this.currentUser.name || 'User');
-        const firstName = this.escapeHTML((this.currentUser.name || 'User').split(' ')[0]);
-        const avatar = this.escapeHTML(this.currentUser.avatar || (this.currentUser.name || 'User')[0].toUpperCase());
+        const avatarHTML = this.getAvatarHTML(this.currentUser);
 
         userBtn.innerHTML = `
           <div class="nav-user-menu">
             <button type="button" class="nav-user-trigger" onclick="AuthManager.toggleUserDropdown(event)" title="${name}" aria-haspopup="true">
               <div class="nav-user-avatar">
-                ${avatar}
+                ${avatarHTML}
               </div>
-              <span class="nav-user-name">${firstName}</span>
+              <span class="nav-user-name">${name}</span>
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
             </button>
             <div id="nav-user-dropdown-menu" class="user-dropdown-menu">
+              <div style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-subtle); margin-bottom:4px;">
+                <div style="font-weight:700; font-size:0.875rem; color:var(--text-bright); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${this.escapeHTML(this.currentUser.email || '')}</div>
+              </div>
               <a href="#" class="dropdown-item" onclick="App.switchView('user-dashboard'); AuthManager.closeUserDropdown(); return false;">Profile</a>
-              <a href="#" class="dropdown-item" onclick="App.switchView('pricing'); AuthManager.closeUserDropdown(); return false;">Subscription</a>
               <div class="user-dropdown-divider"></div>
               <a href="#" class="dropdown-item logout-item" onclick="AuthManager.logout(); return false;">Logout</a>
             </div>
           </div>
+        `;
+      } else if (this.authInitializing) {
+        userBtn.innerHTML = `
+          <button class="btn btn-primary btn-sm" disabled style="font-weight:700; padding:0.4rem 1.1rem; border-radius:20px; opacity:0.75; cursor:not-allowed; display:inline-flex; align-items:center; gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+            Signing in...
+          </button>
         `;
       } else {
         userBtn.innerHTML = `<button class="btn btn-primary btn-sm" onclick="AuthManager.openAuthModal('signin')" style="font-weight:700; padding:0.4rem 1.1rem; border-radius:20px; box-shadow:0 0 15px rgba(6, 182, 212, 0.3);">Sign In</button>`;
@@ -874,6 +1288,8 @@ const AuthManager = {
       }
     }
 
+    this.updateSocialAuthLoadingButtons();
+
     const pricingProBtn = document.getElementById('pricing-pro-btn');
     if (pricingProBtn) {
       if (isPro) {
@@ -888,3 +1304,7 @@ const AuthManager = {
     }
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.AuthManager = AuthManager;
+}

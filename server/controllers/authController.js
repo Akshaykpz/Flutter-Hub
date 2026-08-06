@@ -289,7 +289,7 @@ const getOAuthUrl = async (req, res) => {
 
     const host = req.get('host');
     const protocol = req.protocol;
-    const redirectTo = `${protocol}://${host}/#oauth-callback`;
+    const redirectTo = `${protocol}://${host}/`;
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -345,7 +345,6 @@ const syncOAuthUser = async (req, res) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const userName = name || cleanEmail.split('@')[0];
 
     // Check if user with this email already exists in Supabase users table
     const { data: existingUser } = await supabase
@@ -354,6 +353,7 @@ const syncOAuthUser = async (req, res) => {
       .eq('email', cleanEmail)
       .maybeSingle();
 
+    const userName = name || existingUser?.name || cleanEmail.split('@')[0];
     const userId = existingUser?.id || id || crypto.randomUUID();
     const createdAt = existingUser?.created_at || new Date().toISOString();
 
