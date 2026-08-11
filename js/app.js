@@ -5,12 +5,14 @@
 const App = {
   currentView: 'home',
   activeCategory: 'all',
+  activeSimpleSystem: 'bento',
+  componentSearchQuery: '',
 
   init: function () {
     // 1. Initialize fixed dark theme
     document.documentElement.setAttribute('data-theme', 'dark');
 
-
+    // 2. Initialize Authentication, Overrides & Data
     AuthManager.init();
     if (window.Dashboards && typeof window.Dashboards.initAdminOverrides === 'function') {
       Dashboards.initAdminOverrides();
@@ -21,7 +23,7 @@ const App = {
       this.validateComponentData();
     }
 
-
+    // 3. Render all core components & sections
     this.renderCategoriesSidebar();
     this.renderComponentGrid();
     this.renderUIScreens();
@@ -36,7 +38,7 @@ const App = {
     this.renderCommunity();
     this.renderDownloads();
 
-
+    // Setup Global Search shortcut (Ctrl+K or Cmd+K) and Escape key
     document.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -64,6 +66,7 @@ const App = {
 
   handleNavClick: function (e, viewId, isProRequired) {
     if (e) e.preventDefault();
+    this.closeMobileMenu();
     const isPro = AuthManager.currentUser && AuthManager.currentUser.isPro;
 
     if (isProRequired && !isPro) {
@@ -85,7 +88,6 @@ const App = {
     const isPro = AuthManager.currentUser && AuthManager.currentUser.isPro;
     const badges = document.querySelectorAll('.nav-pro-badge');
     badges.forEach(b => {
-
       if (isPro) {
         b.textContent = '✓ UNLOCKED';
         b.className = 'badge badge-emerald nav-pro-badge';
@@ -103,13 +105,9 @@ const App = {
   },
 
   switchPricingCycle: function (cycle) {
-
     const monthlyBtn = document.getElementById('billing-btn-monthly');
-
     const yearlyBtn = document.getElementById('billing-btn-yearly');
-
     const monthlyCard = document.getElementById('pricing-card-monthly');
-
     const yearlyCard = document.getElementById('pricing-card-yearly');
 
     if (cycle === 'yearly') {
@@ -128,6 +126,7 @@ const App = {
       }
       if (monthlyCard) {
         monthlyCard.style.transform = 'scale(1.0)';
+        monthlyCard.style.borderColor = 'var(--border-color)';
         monthlyCard.style.boxShadow = 'none';
       }
     } else {
@@ -146,13 +145,11 @@ const App = {
       }
       if (yearlyCard) {
         yearlyCard.style.transform = 'scale(1.0)';
+        yearlyCard.style.borderColor = 'var(--border-color)';
         yearlyCard.style.boxShadow = 'none';
       }
     }
   },
-
-  // Simple & Spacious UI Design System Switcher
-  activeSimpleSystem: 'bento',
 
   switchSimpleDesignSystem: function (systemId) {
     this.activeSimpleSystem = systemId;
@@ -175,8 +172,7 @@ const App = {
     const card = document.getElementById('ds-simple-card');
     if (!card) return;
 
-    const comp = system.components[0]; // Featured component of this design system
-
+    const comp = system.components[0];
     card.style.opacity = '0';
     card.style.transform = 'scale(0.98)';
     card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
@@ -200,7 +196,7 @@ const App = {
           <button class="btn btn-secondary" style="flex:1;" onclick="FlutterSim.renderWidget('${comp.simType}', 'ds-simple-sim-box')">
             ⚡ Interactive Test
           </button>
-          <button class="btn btn-primary" style="flex:1;" onclick="App.openCodeViewerModal('${comp.title.replace(/'/g, "\\'")}', \`${comp.code.replace(/`/g, '\\`')}\`)">
+          <button class="btn btn-primary" style="flex:1;" onclick="App.openCodeViewerModal('${comp.title.replace(/'/g, "\\'")}', \`${comp.code.replace(/\`/g, '\\\\`')}\`)">
             💻 View Flutter Code
           </button>
         </div>
@@ -213,7 +209,6 @@ const App = {
     }, 120);
   },
 
-  // Modal Code Viewer for Design System Components
   openCodeViewerModal: function (title, code) {
     let modal = document.getElementById('code-viewer-modal');
     if (!modal) {
@@ -242,6 +237,7 @@ const App = {
 
   handleBrandClick: function (e) {
     if (e) e.preventDefault();
+    this.closeMobileMenu();
     const isAdmin = AuthManager.currentUser && (AuthManager.currentUser.isAdmin || AuthManager.currentUser.role === 'admin' || (AuthManager.currentUser.email && AuthManager.currentUser.email.toLowerCase() === 'admin@admin.com'));
     if (isAdmin) {
       this.switchView('admin-dashboard');
@@ -250,13 +246,8 @@ const App = {
     }
   },
 
-  // View Navigation Router
   switchView: function (viewId) {
-    const isAdmin = AuthManager.currentUser && (AuthManager.currentUser.isAdmin || AuthManager.currentUser.role === 'admin' || (AuthManager.currentUser.email && AuthManager.currentUser.email.toLowerCase() === 'admin@admin.com'));
-    if (isAdmin && viewId !== 'admin-dashboard') {
-      viewId = 'admin-dashboard';
-    }
-
+    if (viewId === 'blog') viewId = 'blogs';
     this.currentView = viewId;
     const views = document.querySelectorAll('.app-view');
     views.forEach(v => v.style.display = 'none');
@@ -277,31 +268,76 @@ const App = {
     if (viewId === 'downloads') this.renderDownloads();
     if (viewId === 'components') this.renderComponentGrid();
     if (viewId === 'ui-screens') this.renderUIScreens();
+    if (viewId === 'animations') this.renderAnimations();
+    if (viewId === 'state-management') this.renderStateManagement();
     if (viewId === 'projects') this.renderProjects();
-    if (viewId === 'user-dashboard') Dashboards.renderUserDashboard();
-    if (viewId === 'admin-dashboard') Dashboards.renderAdminDashboard();
+    if (viewId === 'blogs' || viewId === 'blog') this.renderBlogs();
+    if (viewId === 'pricing') this.switchPricingCycle('monthly');
+    if (viewId === 'user-dashboard' && window.Dashboards && typeof Dashboards.renderUserDashboard === 'function') Dashboards.renderUserDashboard();
+    if (viewId === 'admin-dashboard' && window.Dashboards && typeof Dashboards.renderAdminDashboard === 'function') Dashboards.renderAdminDashboard();
 
-    // Update Nav Active States & Close Mobile Drawer
-    const mobileMenu = document.querySelector('.nav-menu');
-    if (mobileMenu) mobileMenu.classList.remove('mobile-open');
+    // Automatically close mobile menu drawer on view switch
+    this.closeMobileMenu();
 
     document.querySelectorAll('.nav-link').forEach(link => {
-      if (link.getAttribute('onclick')?.includes(viewId)) {
+      if (link.getAttribute('onclick')?.includes(`'${viewId}'`) || link.getAttribute('onclick')?.includes(`"${viewId}"`)) {
         link.classList.add('active');
       } else {
         link.classList.remove('active');
       }
     });
+
+    document.querySelectorAll('.drawer-item').forEach(item => {
+      if (item.getAttribute('onclick')?.includes(`'${viewId}'`) || item.getAttribute('onclick')?.includes(`"${viewId}"`)) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
   },
 
   toggleMobileMenu: function () {
+    const drawer = document.getElementById('mobile-sidebar-drawer');
     const menu = document.querySelector('.nav-menu');
-    if (menu) {
-      menu.classList.toggle('mobile-open');
+    const backdrop = document.getElementById('mobile-nav-backdrop');
+    const btn = document.getElementById('mobile-menu-btn');
+
+    let isOpen = false;
+    if (drawer) {
+      isOpen = drawer.classList.toggle('active');
+    } else if (menu) {
+      isOpen = menu.classList.toggle('mobile-open');
+    }
+
+    if (backdrop) backdrop.classList.toggle('active', isOpen);
+    if (btn) btn.classList.toggle('is-active', isOpen);
+    document.body.classList.toggle('menu-open', isOpen);
+  },
+
+  closeMobileMenu: function () {
+    const drawer = document.getElementById('mobile-sidebar-drawer');
+    const menu = document.querySelector('.nav-menu');
+    const backdrop = document.getElementById('mobile-nav-backdrop');
+    const btn = document.getElementById('mobile-menu-btn');
+    if (drawer) drawer.classList.remove('active');
+    if (menu) menu.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+    if (btn) btn.classList.remove('is-active');
+    document.body.classList.remove('menu-open');
+  },
+
+  toggleMobileDropdown: function (e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const target = e?.currentTarget;
+    if (target) {
+      const dropdown = target.closest('.nav-dropdown');
+      if (dropdown) dropdown.classList.toggle('expanded');
     }
   },
 
-  // Animated Numbers Counter (0 -> 1,000+, 500+, 200+, 100+, 5,000+)
   animateCounters: function () {
     const counterElements = document.querySelectorAll('.counter-num');
     if (!counterElements.length) return;
@@ -318,7 +354,6 @@ const App = {
         if (!startTime) startTime = timestamp;
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        // Easing cubic curve for smooth counter effect
         const easeProgress = 1 - Math.pow(1 - progress, 3);
         const currentVal = Math.floor(easeProgress * target);
 
@@ -335,8 +370,6 @@ const App = {
       requestAnimationFrame(updateNumber);
     });
   },
-
-  componentSearchQuery: '',
 
   validateComponentData: function () {
     if (!window.FLUTTER_DATA || !Array.isArray(FLUTTER_DATA.components)) return;
@@ -391,21 +424,14 @@ const App = {
     return list;
   },
 
-  // Favorites Real-Time Sync Event Listener
   onFavoritesUpdated: function () {
-    // 1. Instantly update sidebar Favorites badge count & category list
     this.renderCategoriesSidebar();
-
-    // 2. Instantly update component grid (cards update heart state / remove unfavorited cards on the spot!)
     this.renderComponentGrid();
-
-    // 3. Keep user dashboard bookmarked list in sync when it is visible
     if (this.currentView === 'user-dashboard' && window.Dashboards && typeof Dashboards.renderUserDashboard === 'function') {
       Dashboards.renderUserDashboard();
     }
   },
 
-  // Category Sidebar Renderer
   renderCategoriesSidebar: function () {
     const container = document.getElementById('category-sidebar-list');
     if (!container) return;
@@ -487,7 +513,6 @@ const App = {
           <div style="grid-column:1/-1; padding:4rem 2rem; text-align:center; color:var(--text-muted);" class="glass-panel">
             <div style="width:56px; height:56px; border-radius:50%; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:0; color:#f43f5e;">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="#f43f5e" stroke="#f43f5e" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
-              ❤️
             </div>
             <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright); margin-bottom:0.5rem;">No favorite components yet</h3>
             <p style="margin-top:8px; color:var(--text-secondary); font-size:0.9rem;">Click the heart icon on any component card to save it here.</p>
@@ -524,7 +549,7 @@ const App = {
 
     // Trigger widget simulations
     list.forEach(c => {
-      if (c.simType) {
+      if (c.simType && typeof FlutterSim !== 'undefined' && typeof FlutterSim.renderWidget === 'function') {
         FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
       }
     });
@@ -631,16 +656,17 @@ const App = {
     const code = document.getElementById(`tab-code-${cardId}`);
 
     if (tab === 'preview') {
-      prev.style.display = 'flex';
-      code.style.display = 'none';
+      if (prev) prev.style.display = 'flex';
+      if (code) code.style.display = 'none';
     } else {
-      prev.style.display = 'none';
-      code.style.display = 'block';
+      if (prev) prev.style.display = 'none';
+      if (code) code.style.display = 'block';
     }
 
-    const parent = btn.parentElement;
-    parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if (btn && btn.parentElement) {
+      btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
   },
 
   // UI Screens Renderer
@@ -768,7 +794,7 @@ const App = {
     const container = document.getElementById('blogs-grid');
     if (!container) return;
 
-    container.innerHTML = FLUTTER_DATA.blogs.map(b => `
+    container.innerHTML = (FLUTTER_DATA.blogs || []).map(b => `
       <div class="glass-panel" style="padding:1.75rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
           <span class="badge badge-cyan">${b.tag}</span>
@@ -1041,7 +1067,7 @@ const App = {
       <div class="pricing-card" style="padding:1.5rem;">
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
           <div style="width:40px; height:40px; border-radius:10px; background:${j.logoBg}; color:#000; font-weight:800; display:flex; align-items:center; justify-content:center;">
-            ${j.company[0]}
+            ${j.company ? j.company[0] : 'J'}
           </div>
           <div>
             <h4 style="font-size:1.05rem; font-weight:700; color:var(--text-bright);">${j.company}</h4>
@@ -1063,14 +1089,18 @@ const App = {
     const mcqsContainer = document.getElementById('interview-mcqs-container');
     const companyContainer = document.getElementById('interview-company-container');
 
-    if (mcqsContainer) mcqsContainer.innerHTML = InterviewHub.renderMCQsHTML();
-    if (companyContainer) companyContainer.innerHTML = InterviewHub.renderCompanyQuestionsHTML();
+    if (mcqsContainer && typeof InterviewHub !== 'undefined' && typeof InterviewHub.renderMCQsHTML === 'function') {
+      mcqsContainer.innerHTML = InterviewHub.renderMCQsHTML();
+    }
+    if (companyContainer && typeof InterviewHub !== 'undefined' && typeof InterviewHub.renderCompanyQuestionsHTML === 'function') {
+      companyContainer.innerHTML = InterviewHub.renderCompanyQuestionsHTML();
+    }
   },
 
   // Community Renderer
   renderCommunity: function () {
     const groupsContainer = document.getElementById('community-groups-list');
-    if (groupsContainer) {
+    if (groupsContainer && typeof CommunityManager !== 'undefined') {
       groupsContainer.innerHTML = (FLUTTER_DATA.communityGroups || []).map(g => `
         <button class="cat-btn ${CommunityManager.activeGroup === g.name ? 'active' : ''}" style="text-align:left; display:flex; justify-content:space-between; width:100%;" onclick="CommunityManager.activeGroup = '${g.name}'; CommunityManager.renderFeed();">
           <span>${g.name}</span>
@@ -1078,7 +1108,9 @@ const App = {
         </button>
       `).join('');
     }
-    CommunityManager.renderFeed();
+    if (typeof CommunityManager !== 'undefined' && typeof CommunityManager.renderFeed === 'function') {
+      CommunityManager.renderFeed();
+    }
   },
 
   // Downloads Renderer
@@ -1130,7 +1162,7 @@ const App = {
     }
 
     const q = query.toLowerCase();
-    const matchedComps = FLUTTER_DATA.components.filter(c => c.title.toLowerCase().includes(q) || c.category.toLowerCase().includes(q));
+    const matchedComps = (FLUTTER_DATA.components || []).filter(c => c.title.toLowerCase().includes(q) || c.category.toLowerCase().includes(q));
 
     if (matchedComps.length === 0) {
       resultsContainer.innerHTML = `<div style="padding:1.5rem; text-align:center; color:var(--text-muted);">No matching Flutter components found for "${query}"</div>`;
@@ -1157,7 +1189,8 @@ const App = {
   },
 
   escapeHTML: function (str) {
-    return str.replace(/&/g, "&amp;")
+    if (!str) return '';
+    return String(str).replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
   },

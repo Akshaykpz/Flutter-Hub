@@ -3,7 +3,8 @@
    Configures CORS, dotenv, MongoDB, Razorpay APIs, Auth, and Content Routes
    ========================================================================== */
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const supabase = require('./config/superbase');
@@ -40,7 +41,6 @@ app.use('/api/content', require('./routes/contentRoutes'));
 app.use('/api/coupons', require('./routes/couponRoutes'));
 
 // Serve Static Frontend Files (index.html, css, js)
-const path = require('path');
 app.use(express.static(path.join(__dirname, '..')));
 
 // Health Check Route

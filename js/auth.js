@@ -35,6 +35,15 @@ const AuthManager = {
     this.handleOAuthCallback();
     this.updateUI();
 
+    // Strict safety guard to never leave the button in "Signing in..." state
+    setTimeout(() => {
+      if (this.authInitializing) {
+        this.authInitializing = false;
+        sessionStorage.removeItem('flutterhub_oauth_pending');
+        this.updateUI();
+      }
+    }, 1200);
+
     // Auto-restore Admin View on reload if logged in as Admin
     if (this.currentUser && (this.currentUser.isAdmin || this.currentUser.role === 'admin' || (this.currentUser.email && this.currentUser.email.toLowerCase() === 'admin@admin.com'))) {
       if (window.App && typeof window.App.switchView === 'function') {
@@ -1136,7 +1145,6 @@ const AuthManager = {
         <div style="grid-column:1/-1; padding:4rem 2rem; text-align:center; color:var(--text-muted);" class="glass-panel">
           <div style="width:56px; height:56px; border-radius:50%; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:0; color:#f43f5e;">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="#f43f5e" stroke="#f43f5e" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
-            ❤️
           </div>
           <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright); margin-bottom:0.5rem;">No favorite components yet</h3>
           <p style="margin-top:8px; color:var(--text-secondary); font-size:0.9rem;">Click the heart icon on any component card to save it here.</p>
@@ -1230,10 +1238,9 @@ const AuthManager = {
       return;
     }
 
-    // Standard User UI (Restore default layout):
+    // Standard User UI:
     if (navMenu) navMenu.style.display = 'flex';
     if (searchTrigger) searchTrigger.style.display = 'none';
-    if (proContainer) proContainer.style.display = 'block';
 
     if (userBtn) {
       if (this.currentUser) {
@@ -1241,12 +1248,12 @@ const AuthManager = {
         const avatarHTML = this.getAvatarHTML(this.currentUser);
 
         userBtn.innerHTML = `
-          <div class="nav-user-menu">
-            <button type="button" class="nav-user-trigger" onclick="AuthManager.toggleUserDropdown(event)" title="${name}" aria-haspopup="true">
-              <div class="nav-user-avatar">
+          <div class="nav-user-menu" style="position:relative;">
+            <button type="button" class="nav-user-trigger" onclick="AuthManager.toggleUserDropdown(event)" title="${name}" aria-haspopup="true" style="display:flex; align-items:center; gap:8px; background:var(--bg-secondary); border:1px solid var(--border-color); padding:0.35rem 0.8rem; border-radius:24px; cursor:pointer; color:var(--text-bright);">
+              <div class="nav-user-avatar" style="width:28px; height:28px; border-radius:50%; overflow:hidden; background:linear-gradient(135deg,#38bdf8,#8b5cf6); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; color:#fff;">
                 ${avatarHTML}
               </div>
-              <span class="nav-user-name">${name}</span>
+              <span class="nav-user-name" style="font-weight:700; font-size:0.85rem;">${name}</span>
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
             </button>
             <div id="nav-user-dropdown-menu" class="user-dropdown-menu">
@@ -1254,9 +1261,17 @@ const AuthManager = {
                 <div style="font-weight:700; font-size:0.875rem; color:var(--text-bright); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</div>
                 <div style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${this.escapeHTML(this.currentUser.email || '')}</div>
               </div>
-              <a href="#" class="dropdown-item" onclick="App.switchView('user-dashboard'); AuthManager.closeUserDropdown(); return false;">Profile</a>
-              <div class="user-dropdown-divider"></div>
-              <a href="#" class="dropdown-item logout-item" onclick="AuthManager.logout(); return false;">Logout</a>
+              <a href="#" class="dropdown-item" onclick="App.switchView('user-dashboard'); AuthManager.closeUserDropdown(); return false;">
+                <span style="display:flex; align-items:center; gap:8px;">👤 Profile & Account</span>
+              </a>
+              <a href="#" class="dropdown-item" onclick="App.switchView('pricing'); AuthManager.closeUserDropdown(); return false;">
+                <span style="display:flex; align-items:center; gap:8px;">💳 Pricing & Plans</span>
+                <span class="badge badge-pro" style="font-size:0.65rem; padding:2px 6px;">₹299</span>
+              </a>
+              <div class="user-dropdown-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
+              <a href="#" class="dropdown-item logout-item" onclick="AuthManager.logout(); return false;">
+                <span style="display:flex; align-items:center; gap:8px; color:var(--accent-rose); font-weight:600;">🚪 Logout</span>
+              </a>
             </div>
           </div>
         `;
@@ -1276,7 +1291,7 @@ const AuthManager = {
       if (isPro) {
         proContainer.innerHTML = `<span class="badge badge-pro" style="padding:0.35rem 0.75rem; font-size:0.75rem;">✨ PRO ACTIVE</span>`;
       } else {
-        proContainer.innerHTML = `<button id="nav-get-pro-btn" class="btn btn-premium btn-sm" onclick="PaymentGateway.openCheckout()">Get Premium ₹29/mo</button>`;
+        proContainer.innerHTML = ``;
       }
     }
 
@@ -1297,9 +1312,9 @@ const AuthManager = {
         pricingProBtn.className = 'btn btn-secondary';
         pricingProBtn.onclick = () => App.switchView('user-dashboard');
       } else {
-        pricingProBtn.innerHTML = 'Get Pro Access (₹29/mo)';
+        pricingProBtn.innerHTML = 'Get Pro Access (₹299/yr)';
         pricingProBtn.className = 'btn btn-premium';
-        pricingProBtn.onclick = () => PaymentGateway.openCheckout();
+        pricingProBtn.onclick = () => PaymentGateway.openCheckout('yearly');
       }
     }
   }

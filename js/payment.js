@@ -101,8 +101,8 @@ const PaymentGateway = {
 
   updateModalPlanUI: function () {
     const isYearly = this.selectedPlan === 'yearly';
-    let amountText = isYearly ? '₹300 / year' : '₹29 / month';
-    let btnText = isYearly ? 'Launch Razorpay Checkout (₹300/yr)' : 'Launch Razorpay Checkout (₹29/mo)';
+    let amountText = isYearly ? '₹299 / year' : '₹29 / month';
+    let btnText = isYearly ? 'Launch Razorpay Checkout (₹299/yr)' : 'Launch Razorpay Checkout (₹29/mo)';
 
     if (isYearly && this.appliedCoupon) {
       amountText = `₹${this.appliedCoupon.finalPrice} / year (10% OFF)`;
@@ -132,11 +132,11 @@ const PaymentGateway = {
     self.isOpeningCheckout = true;
 
     const isYearly = self.selectedPlan === 'yearly';
-    let planAmountPaise = isYearly ? 30000 : 2900;
+    let planAmountPaise = isYearly ? 29900 : 2900;
     if (isYearly && self.appliedCoupon) {
       planAmountPaise = self.appliedCoupon.finalPrice * 100;
     }
-    const planLabel = isYearly ? (self.appliedCoupon ? `Pro Yearly Pass (₹${self.appliedCoupon.finalPrice}/yr)` : 'Pro Yearly Pass (₹300/yr)') : 'Pro Monthly Pass (₹29/mo)';
+    const planLabel = isYearly ? (self.appliedCoupon ? `Pro Yearly Pass (₹${self.appliedCoupon.finalPrice}/yr)` : 'Pro Yearly Pass (₹299/yr)') : 'Pro Monthly Pass (₹29/mo)';
 
     const payBtn = document.getElementById('rzp-pay-confirm-btn');
     if (payBtn) {
@@ -311,7 +311,7 @@ const PaymentGateway = {
     if (payBtn) {
       payBtn.disabled = false;
       const isYearly = this.selectedPlan === 'yearly';
-      let btnText = isYearly ? 'Launch Razorpay Checkout (₹300/yr)' : 'Launch Razorpay Checkout (₹29/mo)';
+      let btnText = isYearly ? 'Launch Razorpay Checkout (₹299/yr)' : 'Launch Razorpay Checkout (₹29/mo)';
       if (isYearly && this.appliedCoupon) {
         btnText = `Launch Razorpay Checkout (₹${this.appliedCoupon.finalPrice}/yr)`;
       }
