@@ -324,6 +324,29 @@ const CouponManager = {
   // ------------------------------------------------------------------------
   validateCheckoutCoupon: async function (code, plan) {
     const user = AuthManager.currentUser;
+
+    if (window.NetworkManager && !window.NetworkManager.isOnline) {
+      // Offline fallback validation
+      const matched = (this.myCoupons || []).find(c => c.coupon_code && c.coupon_code.toUpperCase() === code.toUpperCase());
+      if (matched || code.toUpperCase().startsWith('WELCOME10-') || code.toUpperCase() === 'FLUTTER10') {
+        const orig = plan === 'monthly' ? 29 : 299;
+        const disc = Math.round(orig * 0.10);
+        const final = orig - disc;
+        return {
+          success: true,
+          message: '10% Discount Coupon applied locally!',
+          data: {
+            coupon_code: code.toUpperCase(),
+            discountPercentage: 10,
+            originalPrice: orig,
+            discountAmount: disc,
+            finalPrice: final
+          }
+        };
+      }
+      return { success: false, message: 'You are currently offline. Connect to the internet to validate cloud coupon codes.' };
+    }
+
     try {
       const res = await fetch('/api/coupons/validate', {
         method: 'POST',
@@ -339,7 +362,7 @@ const CouponManager = {
       const json = await res.json();
       return json;
     } catch (e) {
-      return { success: false, message: 'Server validation error. Please try again.' };
+      return { success: false, message: 'Connection error during coupon validation. Please try again.' };
     }
   }
 };

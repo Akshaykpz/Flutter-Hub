@@ -124,6 +124,11 @@ body {
   height: 100vh;
   pointer-events: none;
   z-index: 0;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
   background-image: 
     radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
     radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.07) 0%, transparent 50%),
@@ -138,6 +143,18 @@ body {
     radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
     linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+}
+
+/* Modern Virtualized Scroll Rendering & Containment */
+.component-card,
+.glass-panel,
+.pricing-card,
+.bento-card,
+.neu-card,
+.clay-card,
+.data-table-wrapper {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 
 /* Containers */
@@ -941,7 +958,184 @@ body {
 
 .toast-success { border-left: 4px solid var(--accent-emerald); }
 .toast-info { border-left: 4px solid var(--accent-cyan-light); }
+.toast-warning { border-left: 4px solid var(--accent-amber); }
 .toast-error { border-left: 4px solid var(--accent-rose); }
+
+/* Network Status Top Banner */
+.network-status-banner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1001;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: bannerSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all 0.3s ease;
+}
+
+.network-banner-offline {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.96) 20%, rgba(15, 23, 42, 0.96) 80%, rgba(245, 158, 11, 0.12) 100%);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.12);
+  color: #fef3c7;
+}
+
+.network-banner-online {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.96) 20%, rgba(15, 23, 42, 0.96) 80%, rgba(16, 185, 129, 0.15) 100%);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.15);
+  color: #d1fae5;
+}
+
+.network-banner-hiding {
+  opacity: 0;
+  transform: translateY(-100%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.network-banner-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.55rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.network-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 260px;
+}
+
+.network-banner-text {
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.network-banner-text strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.network-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.network-status-indicator.offline {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.network-status-indicator.online {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.network-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.pulse-amber {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: dotPulseAmber 1.8s infinite ease-in-out;
+}
+
+.pulse-emerald {
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: dotPulseEmerald 1.8s infinite ease-in-out;
+}
+
+@keyframes dotPulseAmber {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.65; }
+}
+
+@keyframes dotPulseEmerald {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.65; }
+}
+
+@keyframes bannerSlideDown {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.network-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.network-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.network-retry-btn:hover {
+  background: rgba(245, 158, 11, 0.28);
+  border-color: #fbbf24;
+  transform: translateY(-1px);
+}
+
+.network-retry-btn.checking {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.network-retry-icon.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.network-dismiss-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-secondary);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+}
+
+.network-dismiss-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
 
 /* Floating Scratch Reward Card on Home Page */
 .floating-reward-card {
@@ -1437,6 +1631,11 @@ body.menu-open {
     font-size: 0.72rem !important;
   }
 
+  /* Mobile Smooth Touch Scrolling & GPU Compositing */
+  html, body {
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* Component Grid & Cards */
   .component-grid {
     grid-template-columns: 1fr !important;
@@ -1445,6 +1644,17 @@ body.menu-open {
 
   .component-card {
     border-radius: 16px !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .glass-panel {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
   }
 
   .card-header h4 {

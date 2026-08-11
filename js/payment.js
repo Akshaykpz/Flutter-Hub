@@ -127,6 +127,13 @@ const PaymentGateway = {
   openRealRazorpayPopup: async function () {
     const self = this;
 
+    // Guard against offline state
+    if (window.NetworkManager && !window.NetworkManager.isOnline) {
+      App.showToast('⚠️ Internet connection required to process Razorpay payment. Please connect and try again.', 'error');
+      self.resetButtonState();
+      return;
+    }
+
     // Prevent duplicate rapid clicks
     if (self.isOpeningCheckout) return;
     self.isOpeningCheckout = true;

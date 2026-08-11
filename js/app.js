@@ -12,7 +12,29 @@ const App = {
     // 1. Initialize fixed dark theme
     document.documentElement.setAttribute('data-theme', 'dark');
 
-    // 2. Initialize Authentication, Overrides & Data
+    // 2. Initialize Network & Connectivity Monitoring
+    if (window.NetworkManager && typeof window.NetworkManager.init === 'function') {
+      window.NetworkManager.init();
+      this.network = window.NetworkManager;
+
+      // Register reconnection auto-sync hooks
+      window.NetworkManager.onReconnect(() => {
+        const user = AuthManager && AuthManager.currentUser;
+        if (user) {
+          if (user.isAdmin && App.currentView === 'admin-dashboard' && window.Dashboards && typeof window.Dashboards.renderAdminDashboard === 'function') {
+            window.Dashboards.renderAdminDashboard();
+          } else if (window.CouponManager && typeof window.CouponManager.fetchMyCoupons === 'function') {
+            window.CouponManager.fetchMyCoupons().then(() => {
+              if (App.currentView === 'user-dashboard' && window.Dashboards && typeof window.Dashboards.renderUserDashboard === 'function') {
+                window.Dashboards.renderUserDashboard();
+              }
+            });
+          }
+        }
+      });
+    }
+
+    // 3. Initialize Authentication, Overrides & Data
     AuthManager.init();
     if (window.Dashboards && typeof window.Dashboards.initAdminOverrides === 'function') {
       Dashboards.initAdminOverrides();
@@ -23,20 +45,8 @@ const App = {
       this.validateComponentData();
     }
 
-    // 3. Render all core components & sections
+    // 4. Render category sidebar and activate initial view on-demand
     this.renderCategoriesSidebar();
-    this.renderComponentGrid();
-    this.renderUIScreens();
-    this.renderAnimations();
-    this.renderStateManagement();
-    this.renderProjects();
-    this.renderBlogs();
-    this.renderRoadmaps();
-    this.renderDocumentation();
-    this.renderJobs();
-    this.renderInterview();
-    this.renderCommunity();
-    this.renderDownloads();
 
     // Setup Global Search shortcut (Ctrl+K or Cmd+K) and Escape key
     document.addEventListener('keydown', (e) => {
@@ -547,11 +557,43 @@ const App = {
 
     container.innerHTML = list.map(c => this.createComponentCardHTML(c)).join('');
 
-    // Trigger widget simulations
-    list.forEach(c => {
-      if (c.simType && typeof FlutterSim !== 'undefined' && typeof FlutterSim.renderWidget === 'function') {
-        FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
-      }
+    // Lazily initialize widget simulations as they enter viewport
+    this.initLazySimulations();
+  },
+
+  initLazySimulations: function () {
+    if (typeof IntersectionObserver === 'undefined') {
+      // Fallback for older browsers
+      document.querySelectorAll('[data-sim-type]:not([data-sim-rendered])').forEach(el => {
+        const simType = el.getAttribute('data-sim-type');
+        if (simType && typeof FlutterSim !== 'undefined' && typeof FlutterSim.renderWidget === 'function') {
+          el.setAttribute('data-sim-rendered', 'true');
+          FlutterSim.renderWidget(simType, el.id);
+        }
+      });
+      return;
+    }
+
+    if (!this._simObserver) {
+      this._simObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const el = entry.target;
+            const simType = el.getAttribute('data-sim-type');
+            if (simType && !el.hasAttribute('data-sim-rendered') && typeof FlutterSim !== 'undefined' && typeof FlutterSim.renderWidget === 'function') {
+              el.setAttribute('data-sim-rendered', 'true');
+              FlutterSim.renderWidget(simType, el.id);
+            }
+            observer.unobserve(el);
+          }
+        });
+      }, {
+        rootMargin: '300px 0px'
+      });
+    }
+
+    document.querySelectorAll('[data-sim-type]:not([data-sim-rendered])').forEach(el => {
+      this._simObserver.observe(el);
     });
   },
 
@@ -576,11 +618,7 @@ const App = {
     }
 
     container.innerHTML = list.map(c => this.createComponentCardHTML(c)).join('');
-    list.forEach(c => {
-      if (c.simType && typeof FlutterSim !== 'undefined' && typeof FlutterSim.renderWidget === 'function') {
-        FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
-      }
-    });
+    this.initLazySimulations();
 
     return true;
   },
@@ -617,7 +655,7 @@ const App = {
         <div class="card-body" style="position:relative; background:var(--bg-primary);">
           <!-- Live Preview Tab (Always Interactive for ALL components!) -->
           <div id="tab-preview-${c.id}" class="preview-container" style="min-height:230px; padding:1.5rem; display:flex; align-items:center; justify-content:center; position:relative;">
-            <div id="sim-${c.id}" style="width:100%; display:flex; justify-content:center; transition:opacity 0.2s ease;"></div>
+            <div id="sim-${c.id}" data-sim-type="${c.simType || ''}" style="width:100%; display:flex; justify-content:center; transition:opacity 0.2s ease;"></div>
           </div>
 
           <!-- Flutter Code Tab (Locked with PRO Paywall Card for PRO components) -->

@@ -52,57 +52,11 @@
         aria-label="Close Navigation Menu">✕</button>
     </div>
 
-    <!-- Drawer User Profile & Account Card -->
-    <div id="drawer-user-card" class="drawer-user-card" style="margin: 0.75rem 1rem 1rem 1rem; padding: 1rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 16px;">
-      <!-- Dynamic user profile content rendered by AuthManager.updateUI() -->
-    </div>
-
-    <!-- Navigation List (Matching Image 2) -->
+    <!-- Navigation List -->
     <nav class="drawer-nav-list">
-      <!-- Profile & Account Link -->
-      <a href="#" class="drawer-item" onclick="App.switchView('user-dashboard'); App.closeMobileMenu();">
-        <span class="drawer-item-left">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          Profile & Account
-        </span>
-        <span id="drawer-pro-badge" class="drawer-badge badge-blue">Account</span>
-      </a>
-
-      <!-- Pricing & Plans Link -->
-      <a href="#" class="drawer-item" onclick="App.switchView('pricing'); App.closeMobileMenu();">
-        <span class="drawer-item-left">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="5" width="20" height="14" rx="2"></rect>
-            <line x1="2" y1="10" x2="22" y2="10"></line>
-          </svg>
-          Pricing & Plans
-        </span>
-        <span class="drawer-badge badge-pro">₹29/mo</span>
-      </a>
-
-      <div class="drawer-divider"></div>
-
       <!-- Active Home Item -->
       <a href="#" class="drawer-item active" onclick="App.switchView('home'); App.closeMobileMenu();">
         <span class="drawer-item-left">🏠 Home</span>
-      </a>
-
-      <!-- Index (All) -->
-      <a href="#" class="drawer-item"
-        onclick="App.switchView('components'); App.filterCategory('all'); App.closeMobileMenu();">
-        <span class="drawer-item-left">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
-            <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
-            <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
-            <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
-          </svg>
-          Index
-        </span>
-        <span class="drawer-badge badge-blue">All</span>
       </a>
 
       <!-- Components (240+) -->
@@ -119,7 +73,7 @@
         <span class="drawer-badge badge-blue">240+</span>
       </a>
 
-      <!-- Packages (New - Replaces Templates & Screens Removed) -->
+      <!-- Packages (New) -->
       <a href="#" class="drawer-item" onclick="App.switchView('projects'); App.closeMobileMenu();">
         <span class="drawer-item-left">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -132,6 +86,18 @@
           Packages
         </span>
         <span class="drawer-badge badge-green">New</span>
+      </a>
+
+      <!-- Pricing & Plans Link -->
+      <a href="#" class="drawer-item" onclick="App.switchView('pricing'); App.closeMobileMenu();">
+        <span class="drawer-item-left">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+          Pricing & Plans
+        </span>
+        <span class="drawer-badge badge-pro">₹29/mo</span>
       </a>
 
       <div class="drawer-divider"></div>
@@ -185,12 +151,20 @@
       </a>
     </nav>
 
-    <!-- Bottom Zee Palm Team Card (Matching Image 2) -->
-    <div class="drawer-bottom-card">
-      <p class="drawer-team-text">Built and maintained by the Zee Palm team</p>
-      <button class="drawer-project-btn" onclick="App.closeMobileMenu(); PaymentGateway.openCheckout();">
-        Have a project?
-      </button>
+    <!-- Bottom Footer Section: User Profile Card & Team Card -->
+    <div class="drawer-footer-wrapper" style="margin-top:auto; padding-top:1rem; display:flex; flex-direction:column; gap:0.75rem;">
+      <!-- Drawer User Profile & Account Card -->
+      <div id="drawer-user-card" class="drawer-user-card" style="padding: 1rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 16px;">
+        <!-- Dynamic user profile content rendered by AuthManager.updateUI() -->
+      </div>
+
+      <!-- Bottom Zee Palm Team Card (Matching Image 2) -->
+      <div class="drawer-bottom-card" style="margin-top:0;">
+        <p class="drawer-team-text">Built and maintained by the Zee Palm team</p>
+        <button class="drawer-project-btn" onclick="App.closeMobileMenu(); PaymentGateway.openCheckout();">
+          Have a project?
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -1666,6 +1640,7 @@
   <!-- JS Dependencies -->
   <script src="js/data.js"></script>
   <script src="js/flutter-sim.js"></script>
+  <script src="js/network.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/coupons.js"></script>
   <script src="js/payment.js"></script>

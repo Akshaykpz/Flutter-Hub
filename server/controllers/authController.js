@@ -287,9 +287,30 @@ const getOAuthUrl = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Unsupported OAuth provider.' });
     }
 
-    const host = req.get('host');
-    const protocol = req.protocol;
-    const redirectTo = `${protocol}://${host}/`;
+    // Resolve dynamic redirect URL for both mobile & desktop devices (and deployed environments)
+    let redirectTo = req.query.redirectTo || req.query.redirect_uri || req.query.origin;
+
+    if (!redirectTo) {
+      if (process.env.SITE_URL) {
+        redirectTo = process.env.SITE_URL;
+      } else if (process.env.APP_URL) {
+        redirectTo = process.env.APP_URL;
+      } else if (process.env.FRONTEND_URL) {
+        redirectTo = process.env.FRONTEND_URL;
+      } else {
+        const forwardedProto = req.get('x-forwarded-proto');
+        const forwardedHost = req.get('x-forwarded-host');
+        const protocol = forwardedProto || req.protocol || 'http';
+        const host = forwardedHost || req.get('host') || 'localhost:5000';
+        redirectTo = `${protocol}://${host}`;
+      }
+    }
+
+    if (!redirectTo.endsWith('/')) {
+      redirectTo = `${redirectTo}/`;
+    }
+
+    console.log(`🔗 [OAUTH REDIRECT TARGET]: ${redirectTo}`);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,

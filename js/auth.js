@@ -410,6 +410,11 @@ const AuthManager = {
       return;
     }
 
+    if (window.NetworkManager && !window.NetworkManager.isOnline) {
+      App.showToast('⚠️ You are currently offline. Please connect to the internet to sign in.', 'error');
+      return;
+    }
+
     if (btn) {
       btn.disabled = true;
       btn.innerText = 'Signing in...';
@@ -431,7 +436,11 @@ const AuthManager = {
       App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
       App.switchView(this.currentUser.isAdmin ? 'admin-dashboard' : 'home');
     } catch (err) {
-      App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
+      if (!navigator.onLine || (err.message && err.message.includes('fetch'))) {
+        App.showToast('⚠️ Connection error. Please check your internet connection and try again.', 'error');
+      } else {
+        App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
+      }
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -450,6 +459,11 @@ const AuthManager = {
     if (!name || !email || !password) return;
     if (password.length < 6) {
       App.showToast('Password must be at least 6 characters.', 'error');
+      return;
+    }
+
+    if (window.NetworkManager && !window.NetworkManager.isOnline) {
+      App.showToast('⚠️ You are currently offline. Please connect to the internet to create an account.', 'error');
       return;
     }
 
@@ -474,7 +488,11 @@ const AuthManager = {
       App.showToast('Account created and saved in Supabase.', 'success');
       App.switchView('user-dashboard');
     } catch (err) {
-      App.showToast(err.message || 'Signup failed. Please try again.', 'error');
+      if (!navigator.onLine || (err.message && err.message.includes('fetch'))) {
+        App.showToast('⚠️ Connection error. Please check your internet connection and try again.', 'error');
+      } else {
+        App.showToast(err.message || 'Signup failed. Please try again.', 'error');
+      }
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -661,6 +679,11 @@ const AuthManager = {
       return;
     }
 
+    if (window.NetworkManager && !window.NetworkManager.isOnline) {
+      App.showToast('⚠️ You are currently offline. Please connect to the internet to sign in.', 'error');
+      return;
+    }
+
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Authenticating...`;
@@ -681,7 +704,11 @@ const AuthManager = {
       App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
       App.switchView(this.currentUser.isAdmin ? 'admin-dashboard' : 'home');
     } catch (err) {
-      App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
+      if (!navigator.onLine || (err.message && err.message.includes('fetch'))) {
+        App.showToast('⚠️ Connection error. Please check your internet connection and try again.', 'error');
+      } else {
+        App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
+      }
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -716,6 +743,11 @@ const AuthManager = {
       return;
     }
 
+    if (window.NetworkManager && !window.NetworkManager.isOnline) {
+      App.showToast('⚠️ You are currently offline. Please connect to the internet to create an account.', 'error');
+      return;
+    }
+
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Creating Account...`;
@@ -736,7 +768,11 @@ const AuthManager = {
       App.showToast('Account created and saved in Supabase.', 'success');
       App.switchView('home');
     } catch (err) {
-      App.showToast(err.message || 'Signup failed. Please try again.', 'error');
+      if (!navigator.onLine || (err.message && err.message.includes('fetch'))) {
+        App.showToast('⚠️ Connection error. Please check your internet connection and try again.', 'error');
+      } else {
+        App.showToast(err.message || 'Signup failed. Please try again.', 'error');
+      }
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -856,31 +892,46 @@ const AuthManager = {
   // Social Auth Handlers (Google & GitHub)
   loginWithGoogle: async function () {
     if (this.authInitializing) return;
+
+    if (window.NetworkManager && !window.NetworkManager.isOnline) {
+      App.showToast('⚠️ Internet connection required for Google sign-in. Please reconnect and try again.', 'error');
+      return;
+    }
+
     this.authInitializing = true;
     sessionStorage.setItem('flutterhub_oauth_pending', 'google');
     this.updateUI();
     App.showToast('Redirecting to Google OAuth...', 'info');
+
+    // Dynamic redirect URL supporting mobile browsers, desktop & deployed domains
+    const currentOrigin = window.location.origin;
+    const redirectUrl = `${currentOrigin}/`;
+
     try {
-      // 1. Try backend OAuth URL endpoint
-      const res = await fetch('/api/auth/provider/google');
+      // 1. Try backend OAuth URL endpoint with dynamic client redirect URI
+      const res = await fetch(`/api/auth/provider/google?redirectTo=${encodeURIComponent(redirectUrl)}&origin=${encodeURIComponent(currentOrigin)}`);
       const json = await res.json();
       if (json.success && json.url) {
         window.location.href = json.url;
         return;
       }
-    } catch (e) { }
+    } catch (e) {
+      console.warn("Backend Google OAuth notice:", e);
+    }
 
     // 2. Direct Supabase JS Client fallback
     if (window.supabase) {
       try {
         const client = this.getOAuthClient();
-        const { data, error } = await client.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: `${window.location.origin}/` }
-        });
-        if (!error && data?.url) {
-          window.location.href = data.url;
-          return;
+        if (client) {
+          const { data, error } = await client.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: redirectUrl }
+          });
+          if (!error && data?.url) {
+            window.location.href = data.url;
+            return;
+          }
         }
       } catch (err) {
         console.warn("Supabase Google OAuth notice:", err.message);
@@ -918,28 +969,42 @@ const AuthManager = {
   },
 
   loginWithGitHub: async function () {
+    if (window.NetworkManager && !window.NetworkManager.isOnline) {
+      App.showToast('⚠️ Internet connection required for GitHub sign-in. Please reconnect and try again.', 'error');
+      return;
+    }
+
     App.showToast('Redirecting to GitHub OAuth...', 'info');
+
+    // Dynamic redirect URL supporting mobile browsers, desktop & deployed domains
+    const currentOrigin = window.location.origin;
+    const redirectUrl = `${currentOrigin}/`;
+
     try {
-      // 1. Try backend OAuth URL endpoint
-      const res = await fetch('/api/auth/provider/github');
+      // 1. Try backend OAuth URL endpoint with dynamic client redirect URI
+      const res = await fetch(`/api/auth/provider/github?redirectTo=${encodeURIComponent(redirectUrl)}&origin=${encodeURIComponent(currentOrigin)}`);
       const json = await res.json();
       if (json.success && json.url) {
         window.location.href = json.url;
         return;
       }
-    } catch (e) { }
+    } catch (e) {
+      console.warn("Backend GitHub OAuth notice:", e);
+    }
 
     // 2. Direct Supabase JS Client fallback
     if (window.supabase) {
       try {
-        const client = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
-        const { data, error } = await client.auth.signInWithOAuth({
-          provider: 'github',
-          options: { redirectTo: `${window.location.origin}/#oauth-callback` }
-        });
-        if (!error && data?.url) {
-          window.location.href = data.url;
-          return;
+        const client = this.getOAuthClient();
+        if (client) {
+          const { data, error } = await client.auth.signInWithOAuth({
+            provider: 'github',
+            options: { redirectTo: redirectUrl }
+          });
+          if (!error && data?.url) {
+            window.location.href = data.url;
+            return;
+          }
         }
       } catch (err) {
         console.warn("Supabase GitHub OAuth notice:", err.message);
