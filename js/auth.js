@@ -1242,35 +1242,44 @@ const AuthManager = {
     if (navMenu) navMenu.style.display = 'flex';
     if (searchTrigger) searchTrigger.style.display = 'none';
 
+    // Header User Navigation Button:
     if (userBtn) {
       if (this.currentUser) {
         const name = this.escapeHTML(this.currentUser.name || 'User');
         const avatarHTML = this.getAvatarHTML(this.currentUser);
+        const email = this.escapeHTML(this.currentUser.email || '');
 
         userBtn.innerHTML = `
           <div class="nav-user-menu" style="position:relative;">
-            <button type="button" class="nav-user-trigger" onclick="AuthManager.toggleUserDropdown(event)" title="${name}" aria-haspopup="true" style="display:flex; align-items:center; gap:8px; background:var(--bg-secondary); border:1px solid var(--border-color); padding:0.35rem 0.8rem; border-radius:24px; cursor:pointer; color:var(--text-bright);">
+            <button type="button" class="nav-user-trigger" onclick="AuthManager.toggleUserDropdown(event)" title="${name}" aria-haspopup="true" style="display:flex; align-items:center; gap:8px; background:var(--bg-secondary); border:1px solid ${isPro ? 'rgba(245,158,11,0.5)' : 'var(--border-color)'}; padding:0.35rem 0.85rem; border-radius:24px; cursor:pointer; color:var(--text-bright);">
               <div class="nav-user-avatar" style="width:28px; height:28px; border-radius:50%; overflow:hidden; background:linear-gradient(135deg,#38bdf8,#8b5cf6); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; color:#fff;">
                 ${avatarHTML}
               </div>
               <span class="nav-user-name" style="font-weight:700; font-size:0.85rem;">${name}</span>
+              ${isPro ? '<span class="badge badge-pro" style="font-size:0.6rem; padding:1px 5px;">PRO</span>' : ''}
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
             </button>
-            <div id="nav-user-dropdown-menu" class="user-dropdown-menu">
+            <div id="nav-user-dropdown-menu" class="user-dropdown-menu" style="min-width:220px;">
               <div style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-subtle); margin-bottom:4px;">
                 <div style="font-weight:700; font-size:0.875rem; color:var(--text-bright); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</div>
-                <div style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${this.escapeHTML(this.currentUser.email || '')}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${email}</div>
+                <span class="badge ${isPro ? 'badge-pro' : 'badge-cyan'}" style="font-size:0.65rem; margin-top:4px; display:inline-block;">${isPro ? '✨ PRO ACTIVE' : 'FREE PLAN'}</span>
               </div>
               <a href="#" class="dropdown-item" onclick="App.switchView('user-dashboard'); AuthManager.closeUserDropdown(); return false;">
                 <span style="display:flex; align-items:center; gap:8px;">👤 Profile & Account</span>
               </a>
               <a href="#" class="dropdown-item" onclick="App.switchView('pricing'); AuthManager.closeUserDropdown(); return false;">
                 <span style="display:flex; align-items:center; gap:8px;">💳 Pricing & Plans</span>
-                <span class="badge badge-pro" style="font-size:0.65rem; padding:2px 6px;">₹299</span>
+                <span class="badge badge-pro" style="font-size:0.65rem; padding:2px 6px;">₹29/mo</span>
               </a>
+              ${isAdmin ? `
+                <a href="#" class="dropdown-item" onclick="App.switchView('admin-dashboard'); AuthManager.closeUserDropdown(); return false;">
+                  <span style="display:flex; align-items:center; gap:8px; color:#f59e0b; font-weight:700;">👑 Admin Control Panel</span>
+                </a>
+              ` : ''}
               <div class="user-dropdown-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
-              <a href="#" class="dropdown-item logout-item" onclick="AuthManager.logout(); return false;">
-                <span style="display:flex; align-items:center; gap:8px; color:var(--accent-rose); font-weight:600;">🚪 Logout</span>
+              <a href="#" class="dropdown-item logout-item" onclick="AuthManager.confirmLogout(); AuthManager.closeUserDropdown(); return false;">
+                <span style="display:flex; align-items:center; gap:8px; color:var(--accent-rose); font-weight:600;">🚪 Sign Out</span>
               </a>
             </div>
           </div>
@@ -1283,8 +1292,62 @@ const AuthManager = {
           </button>
         `;
       } else {
-        userBtn.innerHTML = `<button class="btn btn-primary btn-sm" onclick="AuthManager.openAuthModal('signin')" style="font-weight:700; padding:0.4rem 1.1rem; border-radius:20px; box-shadow:0 0 15px rgba(6, 182, 212, 0.3);">Sign In</button>`;
+        userBtn.innerHTML = `
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="btn btn-primary btn-sm user-nav-btn" onclick="AuthManager.openAuthModal('signin')" style="font-weight:700; padding:0.4rem 1.1rem; border-radius:20px; box-shadow:0 0 15px rgba(6, 182, 212, 0.3);">Sign In</button>
+          </div>
+        `;
       }
+    }
+
+    // Mobile Drawer User Card:
+    const drawerUserCard = document.getElementById('drawer-user-card');
+    if (drawerUserCard) {
+      if (this.currentUser) {
+        const name = this.escapeHTML(this.currentUser.name || 'User');
+        const email = this.escapeHTML(this.currentUser.email || '');
+        const avatarHTML = this.getAvatarHTML(this.currentUser);
+
+        drawerUserCard.innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:0.75rem;">
+            <div style="width:38px; height:38px; border-radius:50%; overflow:hidden; background:linear-gradient(135deg,#38bdf8,#8b5cf6); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; flex-shrink:0;">
+              ${avatarHTML}
+            </div>
+            <div style="overflow:hidden; flex:1;">
+              <div style="font-weight:800; font-size:0.95rem; color:var(--text-bright); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${name}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${email}</div>
+            </div>
+            <span class="badge ${isPro ? 'badge-pro' : 'badge-cyan'}" style="font-size:0.65rem;">${isPro ? 'PRO' : 'FREE'}</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-primary btn-sm" style="flex:1; font-size:0.8rem; padding:0.4rem;" onclick="App.switchView('user-dashboard'); App.closeMobileMenu();">
+              👤 My Profile
+            </button>
+            <button class="btn btn-secondary btn-sm" style="font-size:0.8rem; padding:0.4rem 0.6rem; color:var(--accent-rose);" onclick="App.closeMobileMenu(); AuthManager.confirmLogout();">
+              Sign Out
+            </button>
+          </div>
+        `;
+      } else {
+        drawerUserCard.innerHTML = `
+          <div style="font-size:0.85rem; font-weight:700; color:var(--text-bright); margin-bottom:4px;">👤 Developer Account</div>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.3;">Sign in to access your saved widgets, interview progress & pro pass.</p>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-primary btn-sm" style="flex:1; font-size:0.8rem; padding:0.45rem;" onclick="App.closeMobileMenu(); AuthManager.openAuthModal('signin');">
+              Sign In
+            </button>
+            <button class="btn btn-secondary btn-sm" style="flex:1; font-size:0.8rem; padding:0.45rem;" onclick="App.closeMobileMenu(); AuthManager.openAuthModal('signup');">
+              Register
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    const drawerProBadge = document.getElementById('drawer-pro-badge');
+    if (drawerProBadge) {
+      drawerProBadge.textContent = isPro ? 'PRO' : (this.currentUser ? 'ACTIVE' : 'SIGN IN');
+      drawerProBadge.className = isPro ? 'drawer-badge badge-pro' : 'drawer-badge badge-blue';
     }
 
     if (proContainer) {

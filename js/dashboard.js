@@ -95,10 +95,39 @@ const Dashboards = {
 
     if (!user) {
       container.innerHTML = `
-        <div class="glass-panel" style="padding:2.5rem; text-align:center; max-width:560px; margin:3rem auto;">
-          <h2 style="font-size:1.6rem; font-weight:800; color:var(--text-bright); margin-bottom:0.75rem;">Sign in to view your dashboard</h2>
-          <p style="color:var(--text-secondary); margin-bottom:1.5rem;">Your saved components, downloads, and plan details will appear here after login.</p>
-          <button class="btn btn-primary" onclick="AuthManager.openAuthModal('signin')">Sign In</button>
+        <div class="glass-panel" style="padding:3rem 2rem; text-align:center; max-width:620px; margin:3rem auto; border-radius:24px; border:1px solid rgba(56,189,248,0.3); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+          <div style="width:64px; height:64px; border-radius:50%; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem auto; font-size:28px;">
+            👤
+          </div>
+          <span class="badge badge-cyan" style="margin-bottom:0.75rem;">DEVELOPER ACCOUNT PORTAL</span>
+          <h2 style="font-size:1.85rem; font-weight:800; color:var(--text-bright); margin-bottom:0.75rem;">Sign In to Your Account</h2>
+          <p style="color:var(--text-secondary); margin-bottom:2rem; font-size:0.95rem; line-height:1.6;">
+            Access your personalized Flutter workspace, track bookmarked widgets, download full app templates, manage reward coupons, and unlock Pro features.
+          </p>
+
+          <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:2rem;">
+            <button class="btn btn-primary btn-lg" onclick="AuthManager.openAuthModal('signin')" style="padding:0.75rem 2rem;">
+              Sign In to Account
+            </button>
+            <button class="btn btn-secondary btn-lg" onclick="AuthManager.openAuthModal('signup')" style="padding:0.75rem 2rem;">
+              Create Free Account
+            </button>
+          </div>
+
+          <div style="border-top:1px solid var(--border-subtle); padding-top:1.5rem; display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; text-align:center;">
+            <div>
+              <div style="font-size:1.25rem; font-weight:800; color:#38bdf8;">1,000+</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Flutter Snippets</div>
+            </div>
+            <div>
+              <div style="font-size:1.25rem; font-weight:800; color:#8b5cf6;">50 Q&A</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Interview Hub</div>
+            </div>
+            <div>
+              <div style="font-size:1.25rem; font-weight:800; color:#10b981;">₹29/mo</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Pro Membership</div>
+            </div>
+          </div>
         </div>
       `;
       return;
