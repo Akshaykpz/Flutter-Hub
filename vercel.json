@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "env": {
+    "SITE_URL": "https://flutter-hub-six.vercel.app",
+    "APP_URL": "https://flutter-hub-six.vercel.app"
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}

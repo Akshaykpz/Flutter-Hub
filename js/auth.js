@@ -889,6 +889,17 @@ const AuthManager = {
     }, 1000);
   },
 
+  getOAuthRedirectUrl: function () {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${window.location.origin}/`;
+    }
+    if (hostname.includes('vercel.app')) {
+      return `https://${hostname}/`;
+    }
+    return `${window.location.origin}/`;
+  },
+
   // Social Auth Handlers (Google & GitHub)
   loginWithGoogle: async function () {
     if (this.authInitializing) return;
@@ -903,9 +914,9 @@ const AuthManager = {
     this.updateUI();
     App.showToast('Redirecting to Google OAuth...', 'info');
 
-    // Dynamic redirect URL supporting mobile browsers, desktop & deployed domains
+    // Dynamic redirect URL supporting mobile browsers, desktop & deployed domains (Vercel & localhost)
+    const redirectUrl = this.getOAuthRedirectUrl();
     const currentOrigin = window.location.origin;
-    const redirectUrl = `${currentOrigin}/`;
 
     try {
       // 1. Try backend OAuth URL endpoint with dynamic client redirect URI
@@ -976,9 +987,9 @@ const AuthManager = {
 
     App.showToast('Redirecting to GitHub OAuth...', 'info');
 
-    // Dynamic redirect URL supporting mobile browsers, desktop & deployed domains
+    // Dynamic redirect URL supporting mobile browsers, desktop & deployed domains (Vercel & localhost)
+    const redirectUrl = this.getOAuthRedirectUrl();
     const currentOrigin = window.location.origin;
-    const redirectUrl = `${currentOrigin}/`;
 
     try {
       // 1. Try backend OAuth URL endpoint with dynamic client redirect URI

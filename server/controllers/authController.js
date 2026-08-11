@@ -297,11 +297,13 @@ const getOAuthUrl = async (req, res) => {
         redirectTo = process.env.APP_URL;
       } else if (process.env.FRONTEND_URL) {
         redirectTo = process.env.FRONTEND_URL;
+      } else if (process.env.VERCEL_URL) {
+        redirectTo = `https://${process.env.VERCEL_URL}`;
       } else {
         const forwardedProto = req.get('x-forwarded-proto');
         const forwardedHost = req.get('x-forwarded-host');
-        const protocol = forwardedProto || req.protocol || 'http';
-        const host = forwardedHost || req.get('host') || 'localhost:5000';
+        const protocol = forwardedProto || req.protocol || 'https';
+        const host = forwardedHost || req.get('host') || 'flutter-hub-six.vercel.app';
         redirectTo = `${protocol}://${host}`;
       }
     }
