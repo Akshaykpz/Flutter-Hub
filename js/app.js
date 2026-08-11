@@ -645,9 +645,9 @@ const App = {
 
         <!-- Tab Switcher Bar -->
         <div class="tab-bar" style="background:var(--bg-tertiary); padding:4px 10px; border-bottom:1px solid var(--border-subtle); display:flex; gap:6px;">
-          <button class="tab-btn active" onclick="App.switchCardTab('${c.id}', 'preview', this)">⚡ Interactive Live Preview</button>
+          <button class="tab-btn active" onclick="App.switchCardTab('${c.id}', 'preview', this)">Interactive Live Preview</button>
           <button class="tab-btn" onclick="App.switchCardTab('${c.id}', 'code', this)">
-            💻 Flutter Code ${isLocked ? '🔒' : ''}
+            Flutter Code ${isLocked ? '🔒' : ''}
           </button>
         </div>
 
@@ -961,7 +961,7 @@ const App = {
     const roadmapsHTML = `
       <div style="grid-column: 1 / -1; margin-top:2.5rem; margin-bottom:1rem;">
         <h3 style="font-size:1.4rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">
-          🗺️ Zero to Hero Developer Learning Roadmaps
+          Zero to Hero Developer Learning Roadmaps
         </h3>
         <p style="color:var(--text-secondary); font-size:0.9rem;">
           Structured 8-week daily learning path from Flutter basics to advanced Clean Architecture.
@@ -1006,7 +1006,7 @@ const App = {
         <div style="background:linear-gradient(135deg, rgba(56,189,248,0.1), rgba(168,85,247,0.1)); border:1px solid rgba(56,189,248,0.3); border-radius:16px; padding:1.5rem; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem;">
           <div>
             <h3 style="font-size:1.3rem; font-weight:800; color:#fff; margin:0 0 4px;">
-              📖 50 Flutter Interview Questions & Answers Guide
+              50 Flutter Interview Questions & Answers Guide
             </h3>
             <p style="color:var(--text-secondary); font-size:0.875rem; margin:0;">
               ${isPro ? '<strong>✓ PRO UNLOCKED</strong>: All 50 Questions & Answers fully available!' : '<strong>Beginner (1-10) & Intermediate (11-20)</strong>: 100% FREE • Scroll to bottom for <strong>Intermediate Part 2 & Advanced PRO Boxes</strong>'}

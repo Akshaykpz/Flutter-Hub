@@ -302,35 +302,35 @@ const Dashboards = {
         <aside class="admin-sidebar">
           <div class="admin-sidebar-header">Resource Management</div>
           <button class="admin-nav-item ${this.currentAdminTab === 'users' ? 'active' : ''}" onclick="Dashboards.switchAdminTab('users')">
-            <span>👥</span> Users Database
+            Users Database
             <span class="admin-nav-badge">${totalUsers}</span>
           </button>
           <button class="admin-nav-item ${this.currentAdminTab === 'components' ? 'active' : ''}" onclick="Dashboards.switchAdminTab('components')">
-            <span>🧩</span> Components
+            Components
             <span class="admin-nav-badge">${FLUTTER_DATA.components.length}</span>
           </button>
           <button class="admin-nav-item ${this.currentAdminTab === 'roadmaps' ? 'active' : ''}" onclick="Dashboards.switchAdminTab('roadmaps')">
-            <span>🗺️</span> Roadmaps
+            Roadmaps
             <span class="admin-nav-badge">${(FLUTTER_DATA.roadmaps.free || []).length + (FLUTTER_DATA.roadmaps.pro || []).length}</span>
           </button>
           <button class="admin-nav-item ${this.currentAdminTab === 'documentation' ? 'active' : ''}" onclick="Dashboards.switchAdminTab('documentation')">
-            <span>📖</span> Widget Docs
+            Widget Docs
             <span class="admin-nav-badge">${FLUTTER_DATA.documentation.length}</span>
           </button>
           <button class="admin-nav-item ${this.currentAdminTab === 'aiTools' ? 'active' : ''}" onclick="Dashboards.switchAdminTab('aiTools')">
-            <span>🤖</span> AI Utilities
+            AI Utilities
             <span class="admin-nav-badge">${(FLUTTER_DATA.aiTools || []).length}</span>
           </button>
           <button class="admin-nav-item ${this.currentAdminTab === 'projects' ? 'active' : ''}" onclick="Dashboards.switchAdminTab('projects')">
-            <span>🚀</span> Full Projects
+            Full Projects
             <span class="admin-nav-badge">${FLUTTER_DATA.projects.length}</span>
           </button>
           <button class="admin-nav-item ${this.currentAdminTab === 'jobs' ? 'active' : ''}" onclick="Dashboards.switchAdminTab('jobs')">
-            <span>💼</span> Job Board
+            Job Board
             <span class="admin-nav-badge">${FLUTTER_DATA.jobs.length}</span>
           </button>
           <button class="admin-nav-item ${this.currentAdminTab === 'downloads' ? 'active' : ''}" onclick="Dashboards.switchAdminTab('downloads')">
-            <span>📥</span> Downloads
+            Downloads
             <span class="admin-nav-badge">${FLUTTER_DATA.downloads.length}</span>
           </button>
         </aside>

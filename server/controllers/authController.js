@@ -319,6 +319,10 @@ const getOAuthUrl = async (req, res) => {
       options: {
         redirectTo,
         skipBrowserRedirect: true,
+        queryParams: {
+          prompt: 'select_account',  // Always show Google account chooser; never silently re-use last session
+          access_type: 'offline',
+        },
       },
     });
 

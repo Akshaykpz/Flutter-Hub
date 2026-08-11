@@ -6,6 +6,8 @@ const AuthManager = {
   currentUser: null,
   authInitializing: false,
   oauthClient: null,
+  _authSubscription: null,  // store Supabase auth listener so we can unsubscribe on logout
+  _loggingOut: false,       // guard flag: prevents onAuthStateChange from re-logging in during logout
 
   init: function () {
     const saved = localStorage.getItem('flutterhub_user');
@@ -216,12 +218,23 @@ const AuthManager = {
         sessionStorage.removeItem('flutterhub_oauth_pending');
       }
 
-      // 4. Subscribe to auth state changes (e.g. after Google OAuth redirect)
-      client.auth.onAuthStateChange(async (event, session) => {
+      // 4. Subscribe to auth state changes — store subscription so we can unsubscribe on logout
+      const { data: authListenerData } = client.auth.onAuthStateChange(async (event, session) => {
+        // Ignore events during/after logout to prevent re-login from cached Supabase session
+        if (this._loggingOut) return;
+
         if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
           await this.syncSupabaseUserSession(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          // Supabase confirms sign-out; make sure local state is cleared
+          if (this.currentUser) {
+            this.currentUser = null;
+            localStorage.removeItem('flutterhub_user');
+            this.updateUI();
+          }
         }
       });
+      this._authSubscription = authListenerData?.subscription;
     } catch (err) {
       console.warn("Supabase Auth listener notice:", err.message);
       this.authInitializing = false;
@@ -564,10 +577,29 @@ const AuthManager = {
     if (modal) modal.classList.remove('active');
   },
 
-  performLogout: function () {
+  performLogout: async function () {
+    this._loggingOut = true; // Prevent onAuthStateChange from re-logging in during logout
+
+    // Unsubscribe from Supabase auth state listener to prevent re-login
+    if (this._authSubscription) {
+      try { this._authSubscription.unsubscribe(); } catch (_) {}
+      this._authSubscription = null;
+    }
+
+    // Sign out of Supabase to clear the OAuth session cookie/token
+    // This ensures Google account chooser appears on next sign-in
+    const client = this.getOAuthClient();
+    if (client) {
+      try { await client.auth.signOut(); } catch (_) {}
+    }
+
+    // Reset the oauth client so next sign-in gets a fresh instance
+    this.oauthClient = null;
+
     this.closeLogoutModal();
     this.currentUser = null;
     this.authInitializing = false;
+    this._loggingOut = false;
     sessionStorage.removeItem('flutterhub_oauth_pending');
     localStorage.removeItem('flutterhub_user');
     this.closeUserDropdown();
@@ -923,7 +955,14 @@ const AuthManager = {
       const res = await fetch(`/api/auth/provider/google?redirectTo=${encodeURIComponent(redirectUrl)}&origin=${encodeURIComponent(currentOrigin)}`);
       const json = await res.json();
       if (json.success && json.url) {
-        window.location.href = json.url;
+        // Append prompt=select_account so Google always shows account chooser (not auto-select)
+        let oauthUrl = json.url;
+        try {
+          const u = new URL(oauthUrl);
+          u.searchParams.set('prompt', 'select_account');
+          oauthUrl = u.toString();
+        } catch (_) {}
+        window.location.href = oauthUrl;
         return;
       }
     } catch (e) {
@@ -937,7 +976,13 @@ const AuthManager = {
         if (client) {
           const { data, error } = await client.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: redirectUrl }
+            options: {
+              redirectTo: redirectUrl,
+              queryParams: {
+                prompt: 'select_account',   // Force Google account chooser on every sign-in
+                access_type: 'offline',
+              },
+            }
           });
           if (!error && data?.url) {
             window.location.href = data.url;
@@ -1397,7 +1442,7 @@ const AuthManager = {
           </div>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-primary btn-sm" style="flex:1; font-size:0.8rem; padding:0.4rem;" onclick="App.switchView('user-dashboard'); App.closeMobileMenu();">
-              👤 My Profile
+              My Profile
             </button>
             <button class="btn btn-secondary btn-sm" style="font-size:0.8rem; padding:0.4rem 0.6rem; color:var(--accent-rose);" onclick="App.closeMobileMenu(); AuthManager.confirmLogout();">
               Sign Out
@@ -1406,7 +1451,7 @@ const AuthManager = {
         `;
       } else {
         drawerUserCard.innerHTML = `
-          <div style="font-size:0.85rem; font-weight:700; color:var(--text-bright); margin-bottom:4px;">👤 Developer Account</div>
+          <div style="font-size:0.85rem; font-weight:700; color:var(--text-bright); margin-bottom:4px;">Developer Account</div>
           <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.3;">Sign in to access your saved widgets, interview progress & pro pass.</p>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-primary btn-sm" style="flex:1; font-size:0.8rem; padding:0.45rem;" onclick="App.closeMobileMenu(); AuthManager.openAuthModal('signin');">

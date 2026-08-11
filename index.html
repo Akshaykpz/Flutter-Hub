@@ -56,7 +56,7 @@
     <nav class="drawer-nav-list">
       <!-- Active Home Item -->
       <a href="#" class="drawer-item active" onclick="App.switchView('home'); App.closeMobileMenu();">
-        <span class="drawer-item-left">🏠 Home</span>
+        <span class="drawer-item-left">Home</span>
       </a>
 
       <!-- Components (240+) -->
@@ -130,23 +130,23 @@
 
       <!-- Extra features -->
       <a href="#" class="drawer-item" onclick="App.switchView('roadmaps'); App.closeMobileMenu();">
-        <span class="drawer-item-left">🗺️ Roadmaps</span>
+        <span class="drawer-item-left">Roadmaps</span>
         <span class="drawer-badge badge-blue">FREE</span>
       </a>
       <a href="#" class="drawer-item" onclick="App.switchView('documentation'); App.closeMobileMenu();">
-        <span class="drawer-item-left">📖 Widget Docs</span>
+        <span class="drawer-item-left">Widget Docs</span>
         <span class="drawer-badge badge-pro">PRO</span>
       </a>
       <a href="#" class="drawer-item" onclick="App.switchView('jobs'); App.closeMobileMenu();">
-        <span class="drawer-item-left">💼 Job Board</span>
+        <span class="drawer-item-left">Job Board</span>
         <span class="drawer-badge badge-blue">FREE</span>
       </a>
       <a href="#" class="drawer-item" onclick="App.switchView('interview'); App.closeMobileMenu();">
-        <span class="drawer-item-left">🎯 Interview Hub</span>
+        <span class="drawer-item-left">Interview Hub</span>
         <span class="drawer-badge badge-pro">PRO</span>
       </a>
       <a href="#" class="drawer-item" onclick="App.switchView('community'); App.closeMobileMenu();">
-        <span class="drawer-item-left">💬 Community</span>
+        <span class="drawer-item-left">Community</span>
         <span class="drawer-badge badge-blue">FREE</span>
       </a>
     </nav>
@@ -200,15 +200,15 @@
 
       <!-- Desktop Navigation Menu -->
       <ul class="nav-menu desktop-nav-menu">
-        <li><a href="#" class="nav-link active" onclick="App.switchView('home')">🏠 Home</a></li>
-        <li><a href="#" class="nav-link" onclick="App.switchView('components')">🧩 Components</a></li>
-        <li><a href="#" class="nav-link" onclick="App.switchView('projects')">📦 Packages</a></li>
+        <li><a href="#" class="nav-link active" onclick="App.switchView('home')">Home</a></li>
+        <li><a href="#" class="nav-link" onclick="App.switchView('components')">Components</a></li>
+        <li><a href="#" class="nav-link" onclick="App.switchView('projects')">Packages</a></li>
 
         <!-- Learn Dropdown -->
         <li class="nav-dropdown">
           <a href="#" class="nav-link dropdown-toggle" onclick="App.toggleMobileDropdown(event)"
             style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
-            <span style="display:flex; align-items:center; gap:6px;">📚 <span>Learn</span></span>
+            <span style="display:flex; align-items:center; gap:6px;"><span>Learn</span></span>
             <svg class="dropdown-chevron" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"
               viewBox="0 0 24 24">
               <path d="m6 9 6 6 6-6"></path>
@@ -216,16 +216,16 @@
           </a>
           <div class="nav-dropdown-menu">
             <a href="#" class="dropdown-item" onclick="App.handleNavClick(event, 'roadmaps', false)">
-              <span>🗺️ Roadmaps</span>
+              <span>Roadmaps</span>
               <span class="badge badge-cyan" style="font-size: 0.65rem; padding: 2px 6px;">FREE</span>
             </a>
             <a href="#" class="dropdown-item" onclick="App.handleNavClick(event, 'documentation', true)">
-              <span>📖 Widget Docs</span>
+              <span>Widget Docs</span>
               <span class="badge badge-pro nav-pro-badge" data-pro-item="documentation"
                 style="font-size: 0.65rem; padding: 2px 6px;">🔒 PRO</span>
             </a>
             <a href="#" class="dropdown-item" onclick="App.handleNavClick(event, 'ai-tools', true)">
-              <span>🤖 AI Utilities</span>
+              <span>AI Utilities</span>
               <span class="badge badge-pro nav-pro-badge" data-pro-item="ai-tools"
                 style="font-size: 0.65rem; padding: 2px 6px;">🔒 PRO</span>
             </a>
@@ -236,7 +236,7 @@
         <li class="nav-dropdown">
           <a href="#" class="nav-link dropdown-toggle" onclick="App.toggleMobileDropdown(event)"
             style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
-            <span style="display:flex; align-items:center; gap:6px;">💼 <span>Career & Hub</span></span>
+            <span style="display:flex; align-items:center; gap:6px;"><span>Career & Hub</span></span>
             <svg class="dropdown-chevron" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"
               viewBox="0 0 24 24">
               <path d="m6 9 6 6 6-6"></path>
@@ -244,16 +244,16 @@
           </a>
           <div class="nav-dropdown-menu">
             <a href="#" class="dropdown-item" onclick="App.handleNavClick(event, 'jobs', false)">
-              <span>💼 Job Board</span>
+              <span>Job Board</span>
               <span class="badge badge-cyan" style="font-size: 0.65rem; padding: 2px 6px;">FREE</span>
             </a>
             <a href="#" class="dropdown-item" onclick="App.handleNavClick(event, 'interview', true)">
-              <span>🎯 Interview Hub</span>
+              <span>Interview Hub</span>
               <span class="badge badge-pro nav-pro-badge" data-pro-item="interview"
                 style="font-size: 0.65rem; padding: 2px 6px;">🔒 PRO</span>
             </a>
             <a href="#" class="dropdown-item" onclick="App.handleNavClick(event, 'community', false)">
-              <span>💬 Community & Groups</span>
+              <span>Community & Groups</span>
               <span class="badge badge-cyan" style="font-size: 0.65rem; padding: 2px 6px;">FREE</span>
             </a>
           </div>
@@ -471,13 +471,13 @@
         <div class="grid grid-2" style="gap:2rem;">
           <div>
             <h3 style="font-size:1.25rem; font-weight:700; color:var(--text-bright); margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
-              <span>🎯</span> Interactive MCQs Quiz
+              Interactive MCQs Quiz
             </h3>
             <div id="interview-mcqs-container"></div>
           </div>
           <div>
             <h3 style="font-size:1.25rem; font-weight:700; color:var(--text-bright); margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
-              <span>🏢</span> Top Company Interview Solutions
+              Top Company Interview Solutions
             </h3>
             <div id="interview-company-container"></div>
           </div>
