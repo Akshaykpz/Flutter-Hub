@@ -265,7 +265,7 @@ const App = {
     const targetView = document.getElementById(`view-${viewId}`);
     if (targetView) {
       targetView.style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
     }
 
     // Trigger module renderers on view switch

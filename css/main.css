@@ -112,12 +112,11 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
   min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   transition: background-color var(--transition-normal), color var(--transition-normal);
-  /* Improve native touch scrolling performance on mobile */
-  touch-action: pan-y;
-  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Background Grid Pattern */
@@ -2339,27 +2338,28 @@ body.menu-open {
 }
 
 /* ==========================================================================
-   Mobile performance fix — disable expensive blur effects on small screens.
-   backdrop-filter is very GPU-heavy on phones; this removes it below 768px
-   width and uses a plain solid-ish background instead, which looks almost
-   the same but performs far better on mobile.
+   Targeted Mobile Performance Overrides & Layout Safety Nets
    ========================================================================== */
 @media (max-width: 768px) {
-  * {
+  .site-header,
+  .glass-panel,
+  .glass-showcase-card,
+  .component-card,
+  .nav-menu,
+  .mobile-nav-backdrop,
+  .modal-overlay,
+  .toast,
+  .network-status-banner,
+  .floating-reward-card {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
-}
 
-/* ==========================================================================
-   Global responsive safety net — prevents layout breaking / horizontal
-   scroll on screen sizes that aren't explicitly handled by a media query
-   (e.g. small Android phones, foldables, unusual tablet widths).
-   ========================================================================== */
-html,
-body {
-  max-width: 100%;
-  overflow-x: hidden;
+  .container,
+  .container-wide {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
 }
 
 img,
@@ -2370,12 +2370,10 @@ canvas {
   height: auto;
 }
 
-* {
-  min-width: 0;
-}
-
-table {
-  display: block;
+table,
+.data-table-wrapper,
+.code-viewer-container pre {
   max-width: 100%;
   overflow-x: auto;
-}
+  -webkit-overflow-scrolling: touch;
+}
