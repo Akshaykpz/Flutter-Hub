@@ -2350,3 +2350,32 @@ body.menu-open {
     -webkit-backdrop-filter: none !important;
   }
 }
+
+/* ==========================================================================
+   Global responsive safety net — prevents layout breaking / horizontal
+   scroll on screen sizes that aren't explicitly handled by a media query
+   (e.g. small Android phones, foldables, unusual tablet widths).
+   ========================================================================== */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+* {
+  min-width: 0;
+}
+
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
