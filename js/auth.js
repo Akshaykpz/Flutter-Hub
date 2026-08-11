@@ -582,7 +582,7 @@ const AuthManager = {
 
     // Unsubscribe from Supabase auth state listener to prevent re-login
     if (this._authSubscription) {
-      try { this._authSubscription.unsubscribe(); } catch (_) {}
+      try { this._authSubscription.unsubscribe(); } catch (_) { }
       this._authSubscription = null;
     }
 
@@ -590,7 +590,7 @@ const AuthManager = {
     // This ensures Google account chooser appears on next sign-in
     const client = this.getOAuthClient();
     if (client) {
-      try { await client.auth.signOut(); } catch (_) {}
+      try { await client.auth.signOut(); } catch (_) { }
     }
 
     // Reset the oauth client so next sign-in gets a fresh instance
@@ -950,26 +950,7 @@ const AuthManager = {
     const redirectUrl = this.getOAuthRedirectUrl();
     const currentOrigin = window.location.origin;
 
-    try {
-      // 1. Try backend OAuth URL endpoint with dynamic client redirect URI
-      const res = await fetch(`/api/auth/provider/google?redirectTo=${encodeURIComponent(redirectUrl)}&origin=${encodeURIComponent(currentOrigin)}`);
-      const json = await res.json();
-      if (json.success && json.url) {
-        // Append prompt=select_account so Google always shows account chooser (not auto-select)
-        let oauthUrl = json.url;
-        try {
-          const u = new URL(oauthUrl);
-          u.searchParams.set('prompt', 'select_account');
-          oauthUrl = u.toString();
-        } catch (_) {}
-        window.location.href = oauthUrl;
-        return;
-      }
-    } catch (e) {
-      console.warn("Backend Google OAuth notice:", e);
-    }
-
-    // 2. Direct Supabase JS Client fallback
+    // Direct Supabase JS Client (no backend hop — faster, especially on mobile)
     if (window.supabase) {
       try {
         const client = this.getOAuthClient();
@@ -1036,19 +1017,7 @@ const AuthManager = {
     const redirectUrl = this.getOAuthRedirectUrl();
     const currentOrigin = window.location.origin;
 
-    try {
-      // 1. Try backend OAuth URL endpoint with dynamic client redirect URI
-      const res = await fetch(`/api/auth/provider/github?redirectTo=${encodeURIComponent(redirectUrl)}&origin=${encodeURIComponent(currentOrigin)}`);
-      const json = await res.json();
-      if (json.success && json.url) {
-        window.location.href = json.url;
-        return;
-      }
-    } catch (e) {
-      console.warn("Backend GitHub OAuth notice:", e);
-    }
-
-    // 2. Direct Supabase JS Client fallback
+    // Direct Supabase JS Client (no backend hop — faster, especially on mobile)
     if (window.supabase) {
       try {
         const client = this.getOAuthClient();
@@ -1142,7 +1111,7 @@ const AuthManager = {
     } else {
       try {
         localStorage.setItem('flutterhub_guest_bookmarks', JSON.stringify(updatedFavs));
-      } catch (err) {}
+      } catch (err) { }
     }
 
     const clickedCard = e && e.target && typeof e.target.closest === 'function'

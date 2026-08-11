@@ -16,10 +16,10 @@
   <link rel="stylesheet" href="css/dashboard.css">
 
   <!-- Official Razorpay Checkout JS SDK -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
 
   <!-- Official Supabase JS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 </head>
 
 <body>
@@ -152,9 +152,11 @@
     </nav>
 
     <!-- Bottom Footer Section: User Profile Card & Team Card -->
-    <div class="drawer-footer-wrapper" style="margin-top:auto; padding-top:1rem; display:flex; flex-direction:column; gap:0.75rem;">
+    <div class="drawer-footer-wrapper"
+      style="margin-top:auto; padding-top:1rem; display:flex; flex-direction:column; gap:0.75rem;">
       <!-- Drawer User Profile & Account Card -->
-      <div id="drawer-user-card" class="drawer-user-card" style="padding: 1rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 16px;">
+      <div id="drawer-user-card" class="drawer-user-card"
+        style="padding: 1rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 16px;">
         <!-- Dynamic user profile content rendered by AuthManager.updateUI() -->
       </div>
 
@@ -264,7 +266,8 @@
       <div class="nav-actions" style="display:flex; align-items:center; gap:8px;">
         <!-- User / Auth Badge -->
         <div id="nav-user-btn">
-          <button class="btn btn-primary btn-sm user-nav-btn" onclick="AuthManager.openAuthModal('signin')">Sign In</button>
+          <button class="btn btn-primary btn-sm user-nav-btn" onclick="AuthManager.openAuthModal('signin')">Sign
+            In</button>
         </div>
       </div>
     </div>
@@ -366,25 +369,31 @@
         <div style="margin-bottom:2rem;">
           <span class="badge badge-purple" style="margin-bottom:0.5rem;">PHYSICS & MOTION</span>
           <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Animations Library</h1>
-          <p style="color:var(--text-secondary);">High-performance spring physics, shimmer loaders, and hero transitions.</p>
+          <p style="color:var(--text-secondary);">High-performance spring physics, shimmer loaders, and hero
+            transitions.</p>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(400px, 1fr)); gap:1.5rem;" id="animations-grid"></div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(400px, 1fr)); gap:1.5rem;"
+          id="animations-grid"></div>
       </div>
     </div>
 
     <!-- 5. PACKAGES & PROJECTS VIEW -->
     <div id="view-projects" class="app-view" style="display:none;">
       <div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
+        <div
+          style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
           <div>
             <span class="badge badge-cyan" style="margin-bottom:0.5rem;">PACKAGES & TEMPLATES</span>
-            <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Packages & Full Projects</h1>
-            <p style="color:var(--text-secondary);">Production-ready Flutter apps, full architectural templates & pub package blueprints.</p>
+            <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Packages & Full Projects
+            </h1>
+            <p style="color:var(--text-secondary);">Production-ready Flutter apps, full architectural templates & pub
+              package blueprints.</p>
           </div>
           <div style="position:relative; width:100%; max-width:320px;">
             <input type="text" placeholder="🔍 Search projects..." oninput="App.renderProjects(this.value)"
               style="width:100%; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:10px; font-size:0.85rem;" />
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+              style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
               <circle cx="11" cy="11" r="8"></circle>
               <path d="m21 21-4.3-4.3"></path>
             </svg>
@@ -397,16 +406,20 @@
     <!-- 6. ROADMAPS & QUESTIONS VIEW -->
     <div id="view-roadmaps" class="app-view" style="display:none;">
       <div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
+        <div
+          style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
           <div>
             <span class="badge badge-cyan" style="margin-bottom:0.5rem;">LEARNING ROADMAPS</span>
-            <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Developer Roadmaps & Guide</h1>
-            <p style="color:var(--text-secondary);">Master Flutter development step-by-step from zero to senior architect with 50 curated interview questions.</p>
+            <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Developer Roadmaps & Guide
+            </h1>
+            <p style="color:var(--text-secondary);">Master Flutter development step-by-step from zero to senior
+              architect with 50 curated interview questions.</p>
           </div>
           <div style="position:relative; width:100%; max-width:340px;">
             <input type="text" placeholder="🔍 Search roadmaps or questions..." oninput="App.renderRoadmaps(this.value)"
               style="width:100%; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:10px; font-size:0.85rem;" />
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+              style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
               <circle cx="11" cy="11" r="8"></circle>
               <path d="m21 21-4.3-4.3"></path>
             </svg>
@@ -419,16 +432,20 @@
     <!-- 7. DOCUMENTATION VIEW -->
     <div id="view-documentation" class="app-view" style="display:none;">
       <div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
+        <div
+          style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
           <div>
             <span class="badge badge-pro" style="margin-bottom:0.5rem;">PRO DOCUMENTATION</span>
-            <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Widget Docs & Best Practices</h1>
-            <p style="color:var(--text-secondary);">Deep dive architectural guides, rendering pipeline internals, and performance optimization rules.</p>
+            <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Widget Docs & Best
+              Practices</h1>
+            <p style="color:var(--text-secondary);">Deep dive architectural guides, rendering pipeline internals, and
+              performance optimization rules.</p>
           </div>
           <div style="position:relative; width:100%; max-width:320px;">
             <input type="text" placeholder="🔍 Search widget docs..." oninput="App.renderDocumentation(this.value)"
               style="width:100%; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:10px; font-size:0.85rem;" />
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+              style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
               <circle cx="11" cy="11" r="8"></circle>
               <path d="m21 21-4.3-4.3"></path>
             </svg>
@@ -441,16 +458,19 @@
     <!-- 8. JOBS BOARD VIEW -->
     <div id="view-jobs" class="app-view" style="display:none;">
       <div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
+        <div
+          style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
           <div>
             <span class="badge badge-cyan" style="margin-bottom:0.5rem;">CAREER & HIRING</span>
             <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Developer Job Board</h1>
-            <p style="color:var(--text-secondary);">Verified high-paying Flutter developer roles at top tech companies worldwide & remote.</p>
+            <p style="color:var(--text-secondary);">Verified high-paying Flutter developer roles at top tech companies
+              worldwide & remote.</p>
           </div>
           <div style="position:relative; width:100%; max-width:320px;">
             <input type="text" placeholder="🔍 Search remote, senior, location..." oninput="App.renderJobs(this.value)"
               style="width:100%; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:10px; font-size:0.85rem;" />
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+              style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
               <circle cx="11" cy="11" r="8"></circle>
               <path d="m21 21-4.3-4.3"></path>
             </svg>
@@ -465,18 +485,22 @@
       <div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
         <div class="section-header text-center" style="margin-bottom:2.5rem;">
           <span class="badge badge-pro" style="margin-bottom:0.5rem;">INTERVIEW HUB</span>
-          <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter MCQs & Top Company Questions</h1>
-          <p style="color:var(--text-secondary); max-width:600px; margin:0 auto;">Master Google, Cred, BMW interview questions and practice real-time MCQs quiz.</p>
+          <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter MCQs & Top Company Questions
+          </h1>
+          <p style="color:var(--text-secondary); max-width:600px; margin:0 auto;">Master Google, Cred, BMW interview
+            questions and practice real-time MCQs quiz.</p>
         </div>
         <div class="grid grid-2" style="gap:2rem;">
           <div>
-            <h3 style="font-size:1.25rem; font-weight:700; color:var(--text-bright); margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
+            <h3
+              style="font-size:1.25rem; font-weight:700; color:var(--text-bright); margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
               Interactive MCQs Quiz
             </h3>
             <div id="interview-mcqs-container"></div>
           </div>
           <div>
-            <h3 style="font-size:1.25rem; font-weight:700; color:var(--text-bright); margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
+            <h3
+              style="font-size:1.25rem; font-weight:700; color:var(--text-bright); margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
               Top Company Interview Solutions
             </h3>
             <div id="interview-company-container"></div>
@@ -490,8 +514,10 @@
       <div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
         <div style="margin-bottom:2rem;">
           <span class="badge badge-cyan" style="margin-bottom:0.5rem;">ARCHITECTURE</span>
-          <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter State Management Blueprints</h1>
-          <p style="color:var(--text-secondary);">Production code architectures for Riverpod 2.x, BLoC 8.x, Provider and GetX.</p>
+          <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter State Management Blueprints
+          </h1>
+          <p style="color:var(--text-secondary);">Production code architectures for Riverpod 2.x, BLoC 8.x, Provider and
+            GetX.</p>
         </div>
         <div class="grid grid-2" id="state-management-grid" style="gap:1.5rem;"></div>
       </div>
@@ -503,7 +529,8 @@
         <div style="margin-bottom:2rem;">
           <span class="badge badge-purple" style="margin-bottom:0.5rem;">ENGINEERING ARTICLES</span>
           <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Developer Blog & Guides</h1>
-          <p style="color:var(--text-secondary);">Deep dives into graphics rendering, custom shaders, and cross-platform performance tuning.</p>
+          <p style="color:var(--text-secondary);">Deep dives into graphics rendering, custom shaders, and cross-platform
+            performance tuning.</p>
         </div>
         <div class="grid grid-3" id="blogs-grid" style="gap:1.5rem;"></div>
       </div>
@@ -516,53 +543,77 @@
           <span class="badge badge-pro" style="margin-bottom:0.5rem;">SUBSCRIPTION PLANS</span>
           <h1 style="font-size:2.5rem; font-weight:800; color:var(--text-bright);">Unlock Pro Flutter Engineering</h1>
           <p style="color:var(--text-secondary); max-width:640px; margin:0 auto 1.5rem auto;">
-            Get instant access to 1,000+ component source codes, full project templates, widget architecture guides & priority community support.
+            Get instant access to 1,000+ component source codes, full project templates, widget architecture guides &
+            priority community support.
           </p>
 
           <!-- Billing Cycle Switcher -->
-          <div style="display:inline-flex; background:var(--bg-tertiary); padding:4px; border-radius:12px; border:1px solid var(--border-color); gap:4px;">
-            <button id="billing-btn-monthly" class="btn btn-sm btn-primary" onclick="App.switchPricingCycle('monthly')" style="border-radius:8px;">Monthly (₹29/mo)</button>
-            <button id="billing-btn-yearly" class="btn btn-sm btn-secondary" onclick="App.switchPricingCycle('yearly')" style="border-radius:8px;">Yearly (₹199/yr - Save 42%)</button>
+          <div
+            style="display:inline-flex; background:var(--bg-tertiary); padding:4px; border-radius:12px; border:1px solid var(--border-color); gap:4px;">
+            <button id="billing-btn-monthly" class="btn btn-sm btn-primary" onclick="App.switchPricingCycle('monthly')"
+              style="border-radius:8px;">Monthly (₹29/mo)</button>
+            <button id="billing-btn-yearly" class="btn btn-sm btn-secondary" onclick="App.switchPricingCycle('yearly')"
+              style="border-radius:8px;">Yearly (₹199/yr - Save 42%)</button>
           </div>
         </div>
 
         <div class="grid grid-2" style="gap:2rem; max-width:900px; margin:0 auto;">
           <!-- Monthly Card -->
-          <div id="pricing-card-monthly" class="glass-panel" style="padding:2.25rem; border-radius:20px; border:1px solid #38bdf8; position:relative; box-shadow:0 0 35px rgba(56,189,248,0.25); display:flex; flex-direction:column;">
+          <div id="pricing-card-monthly" class="glass-panel"
+            style="padding:2.25rem; border-radius:20px; border:1px solid #38bdf8; position:relative; box-shadow:0 0 35px rgba(56,189,248,0.25); display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
               <span class="badge badge-cyan">MONTHLY PASS</span>
               <span style="font-size:0.85rem; color:var(--text-muted);">Flexible</span>
             </div>
-            <div style="font-size:2.8rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">₹29 <span style="font-size:1rem; font-weight:500; color:var(--text-muted);">/ month</span></div>
-            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.5rem;">Full access to all Pro Flutter widgets, source code & interview guides.</p>
-            <ul style="list-style:none; padding:0; margin:0 0 2rem 0; display:flex; flex-direction:column; gap:10px; font-size:0.9rem; color:var(--text-secondary);">
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#38bdf8; font-weight:bold;">✓</span> 1,000+ Flutter UI Component Source Codes</li>
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#38bdf8; font-weight:bold;">✓</span> 500+ Production Screen Templates</li>
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#38bdf8; font-weight:bold;">✓</span> 50 Full Interview Questions & Detailed Scripts</li>
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#38bdf8; font-weight:bold;">✓</span> All Widget Architecture Guides</li>
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#38bdf8; font-weight:bold;">✓</span> Commercial Use License</li>
+            <div style="font-size:2.8rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">₹29 <span
+                style="font-size:1rem; font-weight:500; color:var(--text-muted);">/ month</span></div>
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.5rem;">Full access to all Pro
+              Flutter widgets, source code & interview guides.</p>
+            <ul
+              style="list-style:none; padding:0; margin:0 0 2rem 0; display:flex; flex-direction:column; gap:10px; font-size:0.9rem; color:var(--text-secondary);">
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#38bdf8; font-weight:bold;">✓</span> 1,000+ Flutter UI Component Source Codes</li>
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#38bdf8; font-weight:bold;">✓</span> 500+ Production Screen Templates</li>
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#38bdf8; font-weight:bold;">✓</span> 50 Full Interview Questions & Detailed Scripts</li>
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#38bdf8; font-weight:bold;">✓</span> All Widget Architecture Guides</li>
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#38bdf8; font-weight:bold;">✓</span> Commercial Use License</li>
             </ul>
-            <button class="btn btn-primary btn-lg" style="width:100%; margin-top:auto;" onclick="PaymentGateway.openCheckout()">
+            <button class="btn btn-primary btn-lg" style="width:100%; margin-top:auto;"
+              onclick="PaymentGateway.openCheckout()">
               ⚡ Get Monthly Pass — ₹29
             </button>
           </div>
 
           <!-- Yearly Card -->
-          <div id="pricing-card-yearly" class="glass-panel" style="padding:2.25rem; border-radius:20px; border:1px solid var(--border-color); position:relative; display:flex; flex-direction:column;">
+          <div id="pricing-card-yearly" class="glass-panel"
+            style="padding:2.25rem; border-radius:20px; border:1px solid var(--border-color); position:relative; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
               <span class="badge badge-pro">YEARLY PASS (BEST VALUE)</span>
               <span style="font-size:0.85rem; color:#f59e0b; font-weight:700;">SAVE 42%</span>
             </div>
-            <div style="font-size:2.8rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">₹199 <span style="font-size:1rem; font-weight:500; color:var(--text-muted);">/ year</span></div>
-            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.5rem;">Everything in Monthly plus full projects, priority updates & AI utilities.</p>
-            <ul style="list-style:none; padding:0; margin:0 0 2rem 0; display:flex; flex-direction:column; gap:10px; font-size:0.9rem; color:var(--text-secondary);">
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#8b5cf6; font-weight:bold;">✓</span> Everything in Monthly Pass</li>
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#8b5cf6; font-weight:bold;">✓</span> 100+ Full Project Source Code (.zip)</li>
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#8b5cf6; font-weight:bold;">✓</span> AI Suite: JSON to Dart & Log Analyzer</li>
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#8b5cf6; font-weight:bold;">✓</span> Resume Templates & Freelance Agreements</li>
-              <li style="display:flex; align-items:center; gap:8px;"><span style="color:#8b5cf6; font-weight:bold;">✓</span> 1 Year Unlimited Updates</li>
+            <div style="font-size:2.8rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">₹199 <span
+                style="font-size:1rem; font-weight:500; color:var(--text-muted);">/ year</span></div>
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.5rem;">Everything in Monthly plus
+              full projects, priority updates & AI utilities.</p>
+            <ul
+              style="list-style:none; padding:0; margin:0 0 2rem 0; display:flex; flex-direction:column; gap:10px; font-size:0.9rem; color:var(--text-secondary);">
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#8b5cf6; font-weight:bold;">✓</span> Everything in Monthly Pass</li>
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#8b5cf6; font-weight:bold;">✓</span> 100+ Full Project Source Code (.zip)</li>
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#8b5cf6; font-weight:bold;">✓</span> AI Suite: JSON to Dart & Log Analyzer</li>
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#8b5cf6; font-weight:bold;">✓</span> Resume Templates & Freelance Agreements</li>
+              <li style="display:flex; align-items:center; gap:8px;"><span
+                  style="color:#8b5cf6; font-weight:bold;">✓</span> 1 Year Unlimited Updates</li>
             </ul>
-            <button class="btn btn-premium btn-lg" style="width:100%; margin-top:auto;" onclick="PaymentGateway.openCheckout()">
+            <button class="btn btn-premium btn-lg" style="width:100%; margin-top:auto;"
+              onclick="PaymentGateway.openCheckout()">
               💎 Get Yearly Pass — ₹199
             </button>
           </div>
@@ -570,496 +621,495 @@
       </div>
     </div>
 
-      <!-- 13. AI TOOLS VIEW -->
-      <div id="view-ai-tools" class="app-view" style="display:none;">
-        <div class="container" style="padding-top:4rem; padding-bottom:4rem;">
-          <div class="section-header text-center">
-            <span class="badge badge-cyan">AI DEVELOPER UTILITIES</span>
-            <h2>Flutter AI Developer Suite</h2>
-            <p>JSON to Dart Class Generator, Stack Trace Diagnostic Analyzer, and Material 3 Theme Generator.</p>
+    <!-- 13. AI TOOLS VIEW -->
+    <div id="view-ai-tools" class="app-view" style="display:none;">
+      <div class="container" style="padding-top:4rem; padding-bottom:4rem;">
+        <div class="section-header text-center">
+          <span class="badge badge-cyan">AI DEVELOPER UTILITIES</span>
+          <h2>Flutter AI Developer Suite</h2>
+          <p>JSON to Dart Class Generator, Stack Trace Diagnostic Analyzer, and Material 3 Theme Generator.</p>
+        </div>
+        <div class="grid grid-2" style="gap:2rem;">
+          <!-- JSON to Dart -->
+          <div class="glass-panel" style="padding:1.5rem;">
+            <h3 style="font-size:1.15rem; color:var(--text-bright); margin-bottom:0.75rem;">JSON to Dart Class
+              Generator
+            </h3>
+            <textarea id="json-input" placeholder="Paste raw JSON here..."
+              style="width:100%; height:120px; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:10px; border-radius:10px; font-family:var(--font-mono); font-size:12px; margin-bottom:10px;"></textarea>
+            <button class="btn btn-primary btn-sm" style="margin-bottom:12px;"
+              onclick="document.getElementById('dart-output').value = AITools.jsonToDart(document.getElementById('json-input').value)">Generate
+              Dart Model</button>
+            <textarea id="dart-output" readonly placeholder="Autogenerated Dart class output..."
+              style="width:100%; height:160px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--accent-cyan-light); padding:10px; border-radius:10px; font-family:var(--font-mono); font-size:12px;"></textarea>
           </div>
-          <div class="grid grid-2" style="gap:2rem;">
-            <!-- JSON to Dart -->
-            <div class="glass-panel" style="padding:1.5rem;">
-              <h3 style="font-size:1.15rem; color:var(--text-bright); margin-bottom:0.75rem;">JSON to Dart Class
-                Generator
-              </h3>
-              <textarea id="json-input" placeholder="Paste raw JSON here..."
-                style="width:100%; height:120px; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:10px; border-radius:10px; font-family:var(--font-mono); font-size:12px; margin-bottom:10px;"></textarea>
-              <button class="btn btn-primary btn-sm" style="margin-bottom:12px;"
-                onclick="document.getElementById('dart-output').value = AITools.jsonToDart(document.getElementById('json-input').value)">Generate
-                Dart Model</button>
-              <textarea id="dart-output" readonly placeholder="Autogenerated Dart class output..."
-                style="width:100%; height:160px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--accent-cyan-light); padding:10px; border-radius:10px; font-family:var(--font-mono); font-size:12px;"></textarea>
-            </div>
 
-            <!-- Stack Trace Error Analyzer -->
-            <div class="glass-panel" style="padding:1.5rem;">
-              <h3 style="font-size:1.15rem; color:var(--text-bright); margin-bottom:0.75rem;">Flutter Stack Trace Error
-                Analyzer</h3>
-              <textarea id="log-input" placeholder="Paste terminal error stack trace log here..."
-                style="width:100%; height:120px; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:10px; border-radius:10px; font-family:var(--font-mono); font-size:12px; margin-bottom:10px;"></textarea>
-              <button class="btn btn-premium btn-sm" style="margin-bottom:12px;"
-                onclick="const res = AITools.analyzeErrorLog(document.getElementById('log-input').value); document.getElementById('analyzer-result').innerHTML = `<strong>\${res.title}</strong><br/>\${res.diagnosis}<br/><br/><pre><code>\${res.fix}</code></pre>`;">Diagnose
-                Stack Trace</button>
-              <div id="analyzer-result"
-                style="background:var(--bg-primary); padding:12px; border-radius:10px; border:1px solid var(--border-color); font-size:12px; color:var(--text-secondary); min-height:160px; max-height:220px; overflow-y:auto;">
-                Result will appear here...</div>
-            </div>
+          <!-- Stack Trace Error Analyzer -->
+          <div class="glass-panel" style="padding:1.5rem;">
+            <h3 style="font-size:1.15rem; color:var(--text-bright); margin-bottom:0.75rem;">Flutter Stack Trace Error
+              Analyzer</h3>
+            <textarea id="log-input" placeholder="Paste terminal error stack trace log here..."
+              style="width:100%; height:120px; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:10px; border-radius:10px; font-family:var(--font-mono); font-size:12px; margin-bottom:10px;"></textarea>
+            <button class="btn btn-premium btn-sm" style="margin-bottom:12px;"
+              onclick="const res = AITools.analyzeErrorLog(document.getElementById('log-input').value); document.getElementById('analyzer-result').innerHTML = `<strong>\${res.title}</strong><br/>\${res.diagnosis}<br/><br/><pre><code>\${res.fix}</code></pre>`;">Diagnose
+              Stack Trace</button>
+            <div id="analyzer-result"
+              style="background:var(--bg-primary); padding:12px; border-radius:10px; border:1px solid var(--border-color); font-size:12px; color:var(--text-secondary); min-height:160px; max-height:220px; overflow-y:auto;">
+              Result will appear here...</div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- 14. COMMUNITY VIEW -->
-      <div id="view-community" class="app-view" style="display:none;">
-        <div class="container" style="padding-top:4rem; padding-bottom:4rem;">
-          <div class="section-header text-center">
-            <span class="badge badge-emerald">DEVELOPER COMMUNITY</span>
-            <h2>Flutter Developer Community & Groups</h2>
-            <p>Ask questions, share code snippets, discuss state management, and earn badges.</p>
+    <!-- 14. COMMUNITY VIEW -->
+    <div id="view-community" class="app-view" style="display:none;">
+      <div class="container" style="padding-top:4rem; padding-bottom:4rem;">
+        <div class="section-header text-center">
+          <span class="badge badge-emerald">DEVELOPER COMMUNITY</span>
+          <h2>Flutter Developer Community & Groups</h2>
+          <p>Ask questions, share code snippets, discuss state management, and earn badges.</p>
+        </div>
+        <div class="grid grid-3" style="gap:2rem;">
+          <div>
+            <h3 style="font-size:1.1rem; color:var(--text-bright); margin-bottom:1rem;">Community Groups</h3>
+            <div id="community-groups-list" style="display:flex; flex-direction:column; gap:8px;"></div>
           </div>
-          <div class="grid grid-3" style="gap:2rem;">
-            <div>
-              <h3 style="font-size:1.1rem; color:var(--text-bright); margin-bottom:1rem;">Community Groups</h3>
-              <div id="community-groups-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-            </div>
-            <div style="grid-column: span 2;">
-              <h3 style="font-size:1.1rem; color:var(--text-bright); margin-bottom:1rem;">Discussion Feed</h3>
-              <div id="community-feed-container"></div>
-            </div>
+          <div style="grid-column: span 2;">
+            <h3 style="font-size:1.1rem; color:var(--text-bright); margin-bottom:1rem;">Discussion Feed</h3>
+            <div id="community-feed-container"></div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- 15. DOWNLOADS VIEW -->
-      <div id="view-downloads" class="app-view" style="display:none;">
-        <div class="container" style="padding-top:4rem; padding-bottom:4rem;">
-          <div class="section-header text-center">
-            <span class="badge badge-cyan">DOWNLOADS & CHEAT SHEETS</span>
-            <h2>Resume Templates, Proposals & Cheat Sheets</h2>
-            <p>Download production resume templates, contract agreements, and Dart 3 cheat sheets.</p>
-          </div>
-          <div id="downloads-container" class="grid grid-2" style="gap:1.5rem;"></div>
+    <!-- 15. DOWNLOADS VIEW -->
+    <div id="view-downloads" class="app-view" style="display:none;">
+      <div class="container" style="padding-top:4rem; padding-bottom:4rem;">
+        <div class="section-header text-center">
+          <span class="badge badge-cyan">DOWNLOADS & CHEAT SHEETS</span>
+          <h2>Resume Templates, Proposals & Cheat Sheets</h2>
+          <p>Download production resume templates, contract agreements, and Dart 3 cheat sheets.</p>
         </div>
+        <div id="downloads-container" class="grid grid-2" style="gap:1.5rem;"></div>
       </div>
+    </div>
 
-      <!-- 16. USER DASHBOARD VIEW -->
-      <div id="view-user-dashboard" class="app-view" style="display:none;">
-        <div class="container dashboard-container" id="user-dashboard-content"></div>
-      </div>
+    <!-- 16. USER DASHBOARD VIEW -->
+    <div id="view-user-dashboard" class="app-view" style="display:none;">
+      <div class="container dashboard-container" id="user-dashboard-content"></div>
+    </div>
 
-      <!-- 17. ADMIN DASHBOARD VIEW -->
-      <div id="view-admin-dashboard" class="app-view" style="display:none;">
-        <div class="container dashboard-container" id="admin-dashboard-content"></div>
-      </div>
+    <!-- 17. ADMIN DASHBOARD VIEW -->
+    <div id="view-admin-dashboard" class="app-view" style="display:none;">
+      <div class="container dashboard-container" id="admin-dashboard-content"></div>
+    </div>
 
 
-      <div id="view-login" class="app-view" style="display:none;">
+    <div id="view-login" class="app-view" style="display:none;">
 
-        <div class="auth-wrapper">
-          <div class="auth-card">
-            <button type="button" onclick="App.switchView('home')" class="auth-close-btn"
-              title="Close &amp; Return Home" aria-label="Close">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path d="M18 6L6 18M6 6l12 12"></path>
-              </svg>
-            </button>
-            <div class="auth-header">
-              <h2 class="auth-title">Welcome Back</h2>
-              <p class="auth-subtitle">Sign in to access 1,000+ Flutter components & full projects</p>
-            </div>
+      <div class="auth-wrapper">
+        <div class="auth-card">
+          <button type="button" onclick="App.switchView('home')" class="auth-close-btn" title="Close &amp; Return Home"
+            aria-label="Close">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12"></path>
+            </svg>
+          </button>
+          <div class="auth-header">
+            <h2 class="auth-title">Welcome Back</h2>
+            <p class="auth-subtitle">Sign in to access 1,000+ Flutter components & full projects</p>
+          </div>
 
-            <form onsubmit="AuthManager.handleLoginSubmit(event)">
-              <div class="form-group">
-                <label class="form-label" for="login-email">Email Address</label>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  <input type="email" id="login-email" class="form-input" placeholder="name@domain.com" required />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <div class="form-label">
-                  <label for="login-password">Password</label>
-                  <a href="#" onclick="App.switchView('forgot-password'); return false;"
-                    style="color:var(--accent-cyan-light); font-size:0.775rem; text-decoration:none; font-weight:600;">Forgot
-                    Password?</a>
-                </div>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                  <input type="password" id="login-password" class="form-input" placeholder="••••••••" required />
-                  <button type="button" class="password-toggle-btn"
-                    onclick="AuthManager.togglePasswordVisibility('login-password', this)">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
-                <label
-                  style="display:flex; align-items:center; gap:8px; font-size:0.825rem; color:var(--text-secondary); cursor:pointer;">
-                  <input type="checkbox" id="remember-me" checked style="accent-color:var(--accent-cyan-light);" />
-                  Remember me for 30 days
-                </label>
-              </div>
-
-              <button type="submit" id="login-submit-btn" class="btn btn-primary"
-                style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700;">
-                Sign In to Account
-              </button>
-            </form>
-
-            <div class="auth-divider">
-              <span>Or continue with social</span>
-            </div>
-
-            <div class="social-auth-grid">
-              <button type="button" class="social-btn" onclick="AuthManager.loginWithGoogle()">
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path fill="#ea4335"
-                    d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
-                  <path fill="#4285f4"
-                    d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
-                  <path fill="#fbbc05"
-                    d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
-                  <path fill="#34a853"
-                    d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
+          <form onsubmit="AuthManager.handleLoginSubmit(event)">
+            <div class="form-group">
+              <label class="form-label" for="login-email">Email Address</label>
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
-                <span>Google</span>
-              </button>
-              <button type="button" class="social-btn" onclick="AuthManager.loginWithGitHub()">
-                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                  <path
-                    d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                </svg>
-                <span>GitHub</span>
-              </button>
-            </div>
-
-            <div class="auth-footer-link">
-              Don't have an account? <a href="#" onclick="App.switchView('signup'); return false;">Sign Up for Free</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 19. SIGN UP VIEW -->
-      <div id="view-signup" class="app-view" style="display:none;">
-        <div class="auth-wrapper">
-          <div class="auth-card">
-            <button type="button" onclick="App.switchView('home')" class="auth-close-btn"
-              title="Close &amp; Return Home" aria-label="Close">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path d="M18 6L6 18M6 6l12 12"></path>
-              </svg>
-            </button>
-            <div class="auth-header">
-              <h2 class="auth-title">Create Account</h2>
-              <p class="auth-subtitle">Join 5,000+ Flutter developers building apps 10x faster</p>
-            </div>
-
-            <form onsubmit="AuthManager.handleSignUpSubmit(event)">
-              <div class="form-group">
-                <label class="form-label" for="signup-name">Full Name</label>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  <input type="text" id="signup-name" class="form-input" placeholder="Akshat Sharma" required />
-                </div>
+                <input type="email" id="login-email" class="form-input" placeholder="name@domain.com" required />
               </div>
-
-              <div class="form-group">
-                <label class="form-label" for="signup-email">Email Address</label>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  <input type="email" id="signup-email" class="form-input" placeholder="name@domain.com" required />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="signup-password">Password</label>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                  <input type="password" id="signup-password" class="form-input" placeholder="Create password" required
-                    oninput="AuthManager.updatePasswordStrengthUI(this.value, 'signup-strength-bar', 'signup-strength-label', 'signup-req')" />
-                  <button type="button" class="password-toggle-btn"
-                    onclick="AuthManager.togglePasswordVisibility('signup-password', this)">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Strength Indicator -->
-                <div class="password-strength-meter">
-                  <div class="strength-bar-bg">
-                    <div id="signup-strength-bar" class="strength-bar-fill"></div>
-                  </div>
-                  <div class="strength-text">
-                    <span>Password strength:</span>
-                    <span id="signup-strength-label"></span>
-                  </div>
-                  <div class="strength-criteria-list">
-                    <div id="signup-req-len" class="strength-criteria-item">✓ 8+ chars</div>
-                    <div id="signup-req-num" class="strength-criteria-item">✓ 1 number</div>
-                    <div id="signup-req-upper" class="strength-criteria-item">✓ Uppercase</div>
-                    <div id="signup-req-spec" class="strength-criteria-item">✓ Special char</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="signup-confirm">Confirm Password</label>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                  <input type="password" id="signup-confirm" class="form-input" placeholder="Repeat password"
-                    required />
-                </div>
-              </div>
-
-              <div style="margin-bottom:1.5rem;">
-                <label
-                  style="display:flex; align-items:center; gap:8px; font-size:0.8rem; color:var(--text-secondary); cursor:pointer;">
-                  <input type="checkbox" required checked style="accent-color:var(--accent-cyan-light);" />
-                  I agree to the Terms of Service & Privacy Policy
-                </label>
-              </div>
-
-              <button type="submit" id="signup-submit-btn" class="btn btn-primary"
-                style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700;">
-                Create Free Account
-              </button>
-            </form>
-
-            <div class="auth-divider">
-              <span>Or register with social</span>
             </div>
 
-            <div class="social-auth-grid">
-              <button type="button" class="social-btn" onclick="AuthManager.loginWithGoogle()">
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path fill="#ea4335"
-                    d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
-                  <path fill="#4285f4"
-                    d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
-                  <path fill="#fbbc05"
-                    d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
-                  <path fill="#34a853"
-                    d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
-                </svg>
-                <span>Google</span>
-              </button>
-              <button type="button" class="social-btn" onclick="AuthManager.loginWithGitHub()">
-                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                  <path
-                    d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                </svg>
-                <span>GitHub</span>
-              </button>
-            </div>
-
-            <div class="auth-footer-link">
-              Already have an account? <a href="#" onclick="App.switchView('login'); return false;">Sign In</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 20. FORGOT PASSWORD VIEW -->
-      <div id="view-forgot-password" class="app-view" style="display:none;">
-        <div class="auth-wrapper">
-          <div class="auth-card">
-            <div class="auth-header">
-              <div class="auth-icon-badge">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path
-                    d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4">
-                  </path>
-                </svg>
+            <div class="form-group">
+              <div class="form-label">
+                <label for="login-password">Password</label>
+                <a href="#" onclick="App.switchView('forgot-password'); return false;"
+                  style="color:var(--accent-cyan-light); font-size:0.775rem; text-decoration:none; font-weight:600;">Forgot
+                  Password?</a>
               </div>
-              <h2 class="auth-title">Forgot Password?</h2>
-              <p class="auth-subtitle">Enter your registered email and we'll send a 4-digit verification code to reset
-                your password.</p>
-            </div>
-
-            <form onsubmit="AuthManager.handleForgotPasswordSubmit(event)">
-              <div class="form-group">
-                <label class="form-label" for="forgot-email">Email Address</label>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  <input type="email" id="forgot-email" class="form-input" placeholder="name@domain.com" required />
-                </div>
-              </div>
-
-              <button type="submit" id="forgot-submit-btn" class="btn btn-primary"
-                style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700; margin-top:0.5rem;">
-                Send Reset Code
-              </button>
-            </form>
-
-            <div class="auth-footer-link">
-              Remembered your password? <a href="#" onclick="App.switchView('login'); return false;">Back to Sign In</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 21. EMAIL VERIFICATION VIEW -->
-      <div id="view-email-verification" class="app-view" style="display:none;">
-        <div class="auth-wrapper">
-          <div class="auth-card">
-            <div class="auth-header">
-              <div class="auth-icon-badge">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              </div>
-              <h2 class="auth-title">Verify Email</h2>
-              <p class="auth-subtitle">We sent a 4-digit code to your email. Enter it below to complete verification.
-              </p>
-            </div>
-
-            <form onsubmit="AuthManager.handleVerifyOTPSubmit(event)">
-              <div class="otp-input-group">
-                <input type="text" maxlength="1" class="otp-box" value="8" autofocus
-                  oninput="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
-                <input type="text" maxlength="1" class="otp-box" value="4"
-                  oninput="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
-                <input type="text" maxlength="1" class="otp-box" value="2"
-                  oninput="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
-                <input type="text" maxlength="1" class="otp-box" value="9"
-                  oninput="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
-              </div>
-
-              <button type="submit" id="otp-submit-btn" class="btn btn-primary"
-                style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700;">
-                Verify & Continue
-              </button>
-            </form>
-
-            <div style="text-align:center; margin-top:1.25rem; font-size:0.825rem; color:var(--text-secondary);">
-              Didn't receive the code? <a href="#"
-                onclick="App.showToast('New verification code sent!', 'info'); return false;"
-                style="color:var(--accent-cyan-light); font-weight:700; text-decoration:none;">Resend Code</a>
-            </div>
-
-            <div class="auth-footer-link">
-              <a href="#" onclick="App.switchView('login'); return false;">Back to Sign In</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 22. RESET PASSWORD VIEW -->
-      <div id="view-reset-password" class="app-view" style="display:none;">
-        <div class="auth-wrapper">
-          <div class="auth-card">
-            <div class="auth-header">
-              <div class="auth-icon-badge">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
+                <input type="password" id="login-password" class="form-input" placeholder="••••••••" required />
+                <button type="button" class="password-toggle-btn"
+                  onclick="AuthManager.togglePasswordVisibility('login-password', this)">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
               </div>
-              <h2 class="auth-title">Reset Password</h2>
-              <p class="auth-subtitle">Create a new, strong password for your FlutterHub account.</p>
             </div>
 
-            <form onsubmit="AuthManager.handleResetPasswordSubmit(event)">
-              <div class="form-group">
-                <label class="form-label" for="reset-password">New Password</label>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                  <input type="password" id="reset-password" class="form-input" placeholder="New password" required
-                    oninput="AuthManager.updatePasswordStrengthUI(this.value, 'reset-strength-bar', 'reset-strength-label', 'reset-req')" />
-                  <button type="button" class="password-toggle-btn"
-                    onclick="AuthManager.togglePasswordVisibility('reset-password', this)">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Strength Indicator -->
-                <div class="password-strength-meter">
-                  <div class="strength-bar-bg">
-                    <div id="reset-strength-bar" class="strength-bar-fill"></div>
-                  </div>
-                  <div class="strength-text">
-                    <span>Strength:</span>
-                    <span id="reset-strength-label"></span>
-                  </div>
-                  <div class="strength-criteria-list">
-                    <div id="reset-req-len" class="strength-criteria-item">✓ 8+ chars</div>
-                    <div id="reset-req-num" class="strength-criteria-item">✓ 1 number</div>
-                    <div id="reset-req-upper" class="strength-criteria-item">✓ Uppercase</div>
-                    <div id="reset-req-spec" class="strength-criteria-item">✓ Special char</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="reset-confirm">Confirm New Password</label>
-                <div class="input-wrapper">
-                  <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                  <input type="password" id="reset-confirm" class="form-input" placeholder="Repeat new password"
-                    required />
-                </div>
-              </div>
-
-              <button type="submit" id="reset-submit-btn" class="btn btn-primary"
-                style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700;">
-                Set New Password
-              </button>
-            </form>
-
-            <div class="auth-footer-link">
-              <a href="#" onclick="App.switchView('login'); return false;">Back to Sign In</a>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+              <label
+                style="display:flex; align-items:center; gap:8px; font-size:0.825rem; color:var(--text-secondary); cursor:pointer;">
+                <input type="checkbox" id="remember-me" checked style="accent-color:var(--accent-cyan-light);" />
+                Remember me for 30 days
+              </label>
             </div>
+
+            <button type="submit" id="login-submit-btn" class="btn btn-primary"
+              style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700;">
+              Sign In to Account
+            </button>
+          </form>
+
+          <div class="auth-divider">
+            <span>Or continue with social</span>
+          </div>
+
+          <div class="social-auth-grid">
+            <button type="button" class="social-btn" onclick="AuthManager.loginWithGoogle()">
+              <svg width="18" height="18" viewBox="0 0 24 24">
+                <path fill="#ea4335"
+                  d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
+                <path fill="#4285f4"
+                  d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                <path fill="#fbbc05"
+                  d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
+                <path fill="#34a853"
+                  d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
+              </svg>
+              <span>Google</span>
+            </button>
+            <button type="button" class="social-btn" onclick="AuthManager.loginWithGitHub()">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+              </svg>
+              <span>GitHub</span>
+            </button>
+          </div>
+
+          <div class="auth-footer-link">
+            Don't have an account? <a href="#" onclick="App.switchView('signup'); return false;">Sign Up for Free</a>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 19. SIGN UP VIEW -->
+    <div id="view-signup" class="app-view" style="display:none;">
+      <div class="auth-wrapper">
+        <div class="auth-card">
+          <button type="button" onclick="App.switchView('home')" class="auth-close-btn" title="Close &amp; Return Home"
+            aria-label="Close">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12"></path>
+            </svg>
+          </button>
+          <div class="auth-header">
+            <h2 class="auth-title">Create Account</h2>
+            <p class="auth-subtitle">Join 5,000+ Flutter developers building apps 10x faster</p>
+          </div>
+
+          <form onsubmit="AuthManager.handleSignUpSubmit(event)">
+            <div class="form-group">
+              <label class="form-label" for="signup-name">Full Name</label>
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <input type="text" id="signup-name" class="form-input" placeholder="Akshat Sharma" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="signup-email">Email Address</label>
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <input type="email" id="signup-email" class="form-input" placeholder="name@domain.com" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="signup-password">Password</label>
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <input type="password" id="signup-password" class="form-input" placeholder="Create password" required
+                  oninput="AuthManager.updatePasswordStrengthUI(this.value, 'signup-strength-bar', 'signup-strength-label', 'signup-req')" />
+                <button type="button" class="password-toggle-btn"
+                  onclick="AuthManager.togglePasswordVisibility('signup-password', this)">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Strength Indicator -->
+              <div class="password-strength-meter">
+                <div class="strength-bar-bg">
+                  <div id="signup-strength-bar" class="strength-bar-fill"></div>
+                </div>
+                <div class="strength-text">
+                  <span>Password strength:</span>
+                  <span id="signup-strength-label"></span>
+                </div>
+                <div class="strength-criteria-list">
+                  <div id="signup-req-len" class="strength-criteria-item">✓ 8+ chars</div>
+                  <div id="signup-req-num" class="strength-criteria-item">✓ 1 number</div>
+                  <div id="signup-req-upper" class="strength-criteria-item">✓ Uppercase</div>
+                  <div id="signup-req-spec" class="strength-criteria-item">✓ Special char</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="signup-confirm">Confirm Password</label>
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <input type="password" id="signup-confirm" class="form-input" placeholder="Repeat password" required />
+              </div>
+            </div>
+
+            <div style="margin-bottom:1.5rem;">
+              <label
+                style="display:flex; align-items:center; gap:8px; font-size:0.8rem; color:var(--text-secondary); cursor:pointer;">
+                <input type="checkbox" required checked style="accent-color:var(--accent-cyan-light);" />
+                I agree to the Terms of Service & Privacy Policy
+              </label>
+            </div>
+
+            <button type="submit" id="signup-submit-btn" class="btn btn-primary"
+              style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700;">
+              Create Free Account
+            </button>
+          </form>
+
+          <div class="auth-divider">
+            <span>Or register with social</span>
+          </div>
+
+          <div class="social-auth-grid">
+            <button type="button" class="social-btn" onclick="AuthManager.loginWithGoogle()">
+              <svg width="18" height="18" viewBox="0 0 24 24">
+                <path fill="#ea4335"
+                  d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
+                <path fill="#4285f4"
+                  d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                <path fill="#fbbc05"
+                  d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
+                <path fill="#34a853"
+                  d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
+              </svg>
+              <span>Google</span>
+            </button>
+            <button type="button" class="social-btn" onclick="AuthManager.loginWithGitHub()">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+              </svg>
+              <span>GitHub</span>
+            </button>
+          </div>
+
+          <div class="auth-footer-link">
+            Already have an account? <a href="#" onclick="App.switchView('login'); return false;">Sign In</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 20. FORGOT PASSWORD VIEW -->
+    <div id="view-forgot-password" class="app-view" style="display:none;">
+      <div class="auth-wrapper">
+        <div class="auth-card">
+          <div class="auth-header">
+            <div class="auth-icon-badge">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path
+                  d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4">
+                </path>
+              </svg>
+            </div>
+            <h2 class="auth-title">Forgot Password?</h2>
+            <p class="auth-subtitle">Enter your registered email and we'll send a 4-digit verification code to reset
+              your password.</p>
+          </div>
+
+          <form onsubmit="AuthManager.handleForgotPasswordSubmit(event)">
+            <div class="form-group">
+              <label class="form-label" for="forgot-email">Email Address</label>
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <input type="email" id="forgot-email" class="form-input" placeholder="name@domain.com" required />
+              </div>
+            </div>
+
+            <button type="submit" id="forgot-submit-btn" class="btn btn-primary"
+              style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700; margin-top:0.5rem;">
+              Send Reset Code
+            </button>
+          </form>
+
+          <div class="auth-footer-link">
+            Remembered your password? <a href="#" onclick="App.switchView('login'); return false;">Back to Sign In</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 21. EMAIL VERIFICATION VIEW -->
+    <div id="view-email-verification" class="app-view" style="display:none;">
+      <div class="auth-wrapper">
+        <div class="auth-card">
+          <div class="auth-header">
+            <div class="auth-icon-badge">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <h2 class="auth-title">Verify Email</h2>
+            <p class="auth-subtitle">We sent a 4-digit code to your email. Enter it below to complete verification.
+            </p>
+          </div>
+
+          <form onsubmit="AuthManager.handleVerifyOTPSubmit(event)">
+            <div class="otp-input-group">
+              <input type="text" maxlength="1" class="otp-box" value="8" autofocus
+                oninput="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+              <input type="text" maxlength="1" class="otp-box" value="4"
+                oninput="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+              <input type="text" maxlength="1" class="otp-box" value="2"
+                oninput="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+              <input type="text" maxlength="1" class="otp-box" value="9"
+                oninput="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+            </div>
+
+            <button type="submit" id="otp-submit-btn" class="btn btn-primary"
+              style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700;">
+              Verify & Continue
+            </button>
+          </form>
+
+          <div style="text-align:center; margin-top:1.25rem; font-size:0.825rem; color:var(--text-secondary);">
+            Didn't receive the code? <a href="#"
+              onclick="App.showToast('New verification code sent!', 'info'); return false;"
+              style="color:var(--accent-cyan-light); font-weight:700; text-decoration:none;">Resend Code</a>
+          </div>
+
+          <div class="auth-footer-link">
+            <a href="#" onclick="App.switchView('login'); return false;">Back to Sign In</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 22. RESET PASSWORD VIEW -->
+    <div id="view-reset-password" class="app-view" style="display:none;">
+      <div class="auth-wrapper">
+        <div class="auth-card">
+          <div class="auth-header">
+            <div class="auth-icon-badge">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h2 class="auth-title">Reset Password</h2>
+            <p class="auth-subtitle">Create a new, strong password for your FlutterHub account.</p>
+          </div>
+
+          <form onsubmit="AuthManager.handleResetPasswordSubmit(event)">
+            <div class="form-group">
+              <label class="form-label" for="reset-password">New Password</label>
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <input type="password" id="reset-password" class="form-input" placeholder="New password" required
+                  oninput="AuthManager.updatePasswordStrengthUI(this.value, 'reset-strength-bar', 'reset-strength-label', 'reset-req')" />
+                <button type="button" class="password-toggle-btn"
+                  onclick="AuthManager.togglePasswordVisibility('reset-password', this)">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Strength Indicator -->
+              <div class="password-strength-meter">
+                <div class="strength-bar-bg">
+                  <div id="reset-strength-bar" class="strength-bar-fill"></div>
+                </div>
+                <div class="strength-text">
+                  <span>Strength:</span>
+                  <span id="reset-strength-label"></span>
+                </div>
+                <div class="strength-criteria-list">
+                  <div id="reset-req-len" class="strength-criteria-item">✓ 8+ chars</div>
+                  <div id="reset-req-num" class="strength-criteria-item">✓ 1 number</div>
+                  <div id="reset-req-upper" class="strength-criteria-item">✓ Uppercase</div>
+                  <div id="reset-req-spec" class="strength-criteria-item">✓ Special char</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="reset-confirm">Confirm New Password</label>
+              <div class="input-wrapper">
+                <svg class="input-icon-left" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <input type="password" id="reset-confirm" class="form-input" placeholder="Repeat new password"
+                  required />
+              </div>
+            </div>
+
+            <button type="submit" id="reset-submit-btn" class="btn btn-primary"
+              style="width:100%; padding:0.85rem; font-size:0.95rem; font-weight:700;">
+              Set New Password
+            </button>
+          </form>
+
+          <div class="auth-footer-link">
+            <a href="#" onclick="App.switchView('login'); return false;">Back to Sign In</a>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </main>
 
@@ -1638,17 +1688,17 @@
   </footer>
 
   <!-- JS Dependencies -->
-  <script src="js/data.js"></script>
-  <script src="js/flutter-sim.js"></script>
-  <script src="js/network.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/coupons.js"></script>
-  <script src="js/payment.js"></script>
-  <script src="js/ai-tools.js"></script>
-  <script src="js/interview.js"></script>
-  <script src="js/community.js"></script>
-  <script src="js/dashboard.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/data.js" defer></script>
+  <script src="js/flutter-sim.js" defer></script>
+  <script src="js/network.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/coupons.js" defer></script>
+  <script src="js/payment.js" defer></script>
+  <script src="js/ai-tools.js" defer></script>
+  <script src="js/interview.js" defer></script>
+  <script src="js/community.js" defer></script>
+  <script src="js/dashboard.js" defer></script>
+  <script src="js/app.js" defer></script>
 </body>
 
 </html>
