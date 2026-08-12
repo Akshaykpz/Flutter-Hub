@@ -309,16 +309,20 @@ const getOAuthUrl = async (req, res) => {
       req.get('origin'),
       `${req.get('x-forwarded-proto') || req.protocol || 'https'}://${req.get('x-forwarded-host') || req.get('host') || ''}`
     );
-    const configuredOrigin = firstValidOrigin(
-      process.env.FRONTEND_URL,
-      process.env.APP_URL,
-      process.env.SITE_URL,
-      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
-    );
+    // VERCEL_URL is automatically injected by Vercel on every deployment (no trailing slash, no protocol)
+    const vercelOrigin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
     const runningOnVercel = !!process.env.VERCEL || !!process.env.VERCEL_URL;
-    const productionOrigin = runningOnVercel && isLocalOrigin(configuredOrigin)
-      ? firstValidOrigin(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null, requestOrigin)
-      : configuredOrigin;
+    // Priority: SITE_URL → APP_URL → FRONTEND_URL → Vercel auto-injected URL
+    const configuredOrigin = firstValidOrigin(
+      process.env.SITE_URL,
+      process.env.APP_URL,
+      process.env.FRONTEND_URL,
+      vercelOrigin
+    );
+    // If configuredOrigin is a localhost value but we are on Vercel, use VERCEL_URL or request origin
+    const productionOrigin = (runningOnVercel && isLocalOrigin(configuredOrigin))
+      ? firstValidOrigin(vercelOrigin, requestOrigin)
+      : (configuredOrigin || requestOrigin);
 
     let redirectTo = req.query.redirectTo || req.query.redirect_uri || req.query.origin;
 
@@ -337,16 +341,22 @@ const getOAuthUrl = async (req, res) => {
     }
 
     if (!redirectTo) {
-      if (productionOrigin && (runningOnVercel || !isLocalOrigin(requestOrigin))) {
-        redirectTo = productionOrigin;
-      } else if (requestOrigin) {
-        redirectTo = requestOrigin;
-      } else {
-        redirectTo = 'https://flutter-hub-six.vercel.app';
+      // Final fallback: productionOrigin (from env) → requestOrigin → vercelOrigin
+      redirectTo = productionOrigin
+        || requestOrigin
+        || firstValidOrigin(vercelOrigin, process.env.SITE_URL);
+    }
+
+    // Hard safety: block any remaining localhost URL from being sent on Vercel
+    if (runningOnVercel && redirectTo && isLocalOrigin(redirectTo)) {
+      const safe = firstValidOrigin(vercelOrigin, process.env.SITE_URL, requestOrigin);
+      if (safe) {
+        console.warn(`⚠️ [OAUTH] Blocked localhost redirect on Vercel — overriding with: ${safe}`);
+        redirectTo = safe;
       }
     }
 
-    if (!redirectTo.endsWith('/')) {
+    if (redirectTo && !redirectTo.endsWith('/')) {
       redirectTo = `${redirectTo}/`;
     }
 

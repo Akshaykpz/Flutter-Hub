@@ -949,6 +949,17 @@ const AuthManager = {
       return '/';
     }
 
+    // Safety guard for production: if somehow origin resolves to localhost
+    // while the actual page is running on a real domain, return '/' instead
+    // so Supabase uses its configured Site URL as the fallback redirect.
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isProductionDomain = !isLocalhost && hostname.includes('.');
+
+    if (isProductionDomain && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      console.warn('[Auth] getOAuthRedirectUrl: detected localhost in origin on production domain — returning /');
+      return '/';
+    }
+
     return `${origin}/`;
   },
 
