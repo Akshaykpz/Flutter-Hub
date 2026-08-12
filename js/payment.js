@@ -4,8 +4,10 @@
    ========================================================================== */
 
 const PaymentGateway = {
-  // Backend API URL (defaults to localhost:5000 or production backend URL)
-  backendUrl: window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://flutterhub-backend.onrender.com',
+  // Backend API URL: local dev uses the Express server; production uses the deployed same-origin API routes.
+  backendUrl: ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:5000'
+    : window.location.origin,
 
   // Live Razorpay Key ID
   razorpayKeyId: localStorage.getItem('flutterhub_rzp_key') || 'rzp_live_TIu357i7kCLnHd',

@@ -937,21 +937,16 @@ const AuthManager = {
   },
 
   getOAuthRedirectUrl: function () {
-    const productionOrigin = 'https://flutter-hub-six.vercel.app';
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
     const origin = window.location.origin;
 
     if (protocol !== 'http:' && protocol !== 'https:') {
-      return `${productionOrigin}/`;
+      return '/';
     }
 
     if (!hostname || origin === 'null') {
-      return `${productionOrigin}/`;
-    }
-
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `${productionOrigin}/`;
+      return '/';
     }
 
     return `${origin}/`;

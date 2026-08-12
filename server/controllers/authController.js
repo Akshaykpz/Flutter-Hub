@@ -288,33 +288,59 @@ const getOAuthUrl = async (req, res) => {
     }
 
     // Resolve dynamic redirect URL for both mobile & desktop devices (and deployed environments)
+    const normalizeOrigin = (value) => {
+      if (!value) return null;
+      try {
+        const parsed = new URL(value);
+        if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+        return parsed.origin;
+      } catch (e) {
+        return null;
+      }
+    };
+    const isLocalOrigin = (value) => {
+      const origin = normalizeOrigin(value);
+      if (!origin) return false;
+      const parsed = new URL(origin);
+      return parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+    };
+    const firstValidOrigin = (...values) => values.map(normalizeOrigin).find(Boolean) || null;
+    const requestOrigin = firstValidOrigin(
+      req.get('origin'),
+      `${req.get('x-forwarded-proto') || req.protocol || 'https'}://${req.get('x-forwarded-host') || req.get('host') || ''}`
+    );
+    const configuredOrigin = firstValidOrigin(
+      process.env.FRONTEND_URL,
+      process.env.APP_URL,
+      process.env.SITE_URL,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+    );
+    const runningOnVercel = !!process.env.VERCEL || !!process.env.VERCEL_URL;
+    const productionOrigin = runningOnVercel && isLocalOrigin(configuredOrigin)
+      ? firstValidOrigin(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null, requestOrigin)
+      : configuredOrigin;
+
     let redirectTo = req.query.redirectTo || req.query.redirect_uri || req.query.origin;
-    const productionOrigin = process.env.SITE_URL || process.env.APP_URL || process.env.FRONTEND_URL || 'https://flutter-hub-six.vercel.app';
 
     if (redirectTo) {
       try {
         const requestedUrl = new URL(redirectTo);
         const isLocalRedirect = requestedUrl.hostname === 'localhost' || requestedUrl.hostname === '127.0.0.1';
-        if (isLocalRedirect) {
+        if (isLocalRedirect && runningOnVercel) {
           redirectTo = productionOrigin;
+        } else {
+          redirectTo = requestedUrl.origin;
         }
       } catch (e) {
-        redirectTo = productionOrigin;
+        redirectTo = productionOrigin || requestOrigin;
       }
     }
 
     if (!redirectTo) {
-      const forwardedProto = req.get('x-forwarded-proto');
-      const forwardedHost = req.get('x-forwarded-host');
-      const requestHost = forwardedHost || req.get('host') || '';
-      const isLocalHost = requestHost.startsWith('localhost') || requestHost.startsWith('127.0.0.1');
-
-      if (!isLocalHost && requestHost) {
-        redirectTo = `${forwardedProto || req.protocol || 'https'}://${requestHost}`;
-      } else if (productionOrigin) {
+      if (productionOrigin && (runningOnVercel || !isLocalOrigin(requestOrigin))) {
         redirectTo = productionOrigin;
-      } else if (process.env.VERCEL_URL) {
-        redirectTo = `https://${process.env.VERCEL_URL}`;
+      } else if (requestOrigin) {
+        redirectTo = requestOrigin;
       } else {
         redirectTo = 'https://flutter-hub-six.vercel.app';
       }
