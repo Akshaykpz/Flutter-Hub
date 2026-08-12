@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flutter Component Library - Build Production Flutter Apps 10x Faster</title>
+  <title>Flutter Hub - Build Production Flutter Apps 10x Faster</title>
   <meta name="description"
     content="The world's best Flutter component library and developer resource platform inspired by shadcn/ui and Aceternity UI. Copy & preview production-ready Flutter code.">
 
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/mobile.css">
 
   <!-- Official Razorpay Checkout JS SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
@@ -44,7 +45,7 @@
           </svg>
         </div>
         <div>
-          <div class="drawer-brand-title">Flutter Component Library</div>
+          <div class="drawer-brand-title">Flutter Hub</div>
           <div class="drawer-brand-sub">Modern UI Library</div>
         </div>
       </div>
@@ -109,7 +110,7 @@
         <span class="drawer-item-left">Roadmaps</span>
         <span class="drawer-badge badge-blue">FREE</span>
       </a>
-      <a href="#" class="drawer-item" onclick="App.switchView('documentation'); App.closeMobileMenu();">
+      <a href="#" class="drawer-item" onclick="App.handleNavClick(event, 'documentation', true); App.closeMobileMenu();">
         <span class="drawer-item-left">Widget Docs</span>
         <span class="drawer-badge badge-pro">PRO</span>
       </a>
@@ -117,7 +118,7 @@
         <span class="drawer-item-left">Job Board</span>
         <span class="drawer-badge badge-blue">FREE</span>
       </a>
-      <a href="#" class="drawer-item" onclick="App.switchView('interview'); App.closeMobileMenu();">
+      <a href="#" class="drawer-item" onclick="App.handleNavClick(event, 'interview', true); App.closeMobileMenu();">
         <span class="drawer-item-left">Interview Hub</span>
         <span class="drawer-badge badge-pro">PRO</span>
       </a>
@@ -164,7 +165,7 @@
       </button>
 
       <!-- Logo Brand (Matching Image 1 & 2) -->
-      <a href="#" class="nav-brand" onclick="App.handleBrandClick(event)" title="Flutter Component Library Home">
+      <a href="#" class="nav-brand" onclick="App.handleBrandClick(event)" title="Flutter Hub Home">
         <div class="brand-icon-wrapper">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff">
             <rect x="3" y="3" width="7" height="7" rx="2"></rect>
@@ -173,7 +174,7 @@
             <rect x="14" y="14" width="7" height="7" rx="2"></rect>
           </svg>
         </div>
-        <span class="brand-text">Flutter Component Library</span>
+        <span class="brand-text">Flutter<span class="text-gradient-flutter">Hub</span></span>
       </a>
 
       <!-- Desktop Navigation Menu -->

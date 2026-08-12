@@ -912,7 +912,7 @@ const App = {
     let proBoxesHTML = '';
     if (!isPro) {
       proBoxesHTML = `
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:1.5rem; margin-top:1.5rem; margin-bottom:2rem;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap:1.5rem; margin-top:1.5rem; margin-bottom:2rem;" class="pro-boxes-container">
           <!-- Box 1: Intermediate Part 2 (Q21 - Q30) -->
           <div class="glass-panel" style="padding:1.75rem; border-color:rgba(245,158,11,0.4); background:linear-gradient(180deg, rgba(245,158,11,0.06), rgba(15,23,42,0.9)); text-align:center; display:flex; flex-direction:column; align-items:center; gap:12px;">
             <div style="width:48px; height:48px; border-radius:50%; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); display:flex; align-items:center; justify-content:center; font-size:20px;">

@@ -1,0 +1,484 @@
+/* ==========================================================================
+   FlutterHub Mobile Responsiveness Fix
+   Fixes: Navbar overflow, layout issues, horizontal scroll on mobile
+   Applies ONLY to mobile screens (max-width: 768px) — desktop unaffected
+   ========================================================================== */
+
+/* Global: prevent any horizontal overflow */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+* {
+  min-width: 0;
+}
+
+/* ── NAVBAR FIX ── */
+@media screen and (max-width: 768px) {
+
+  .navbar {
+    height: 56px !important;
+    padding: 0 0.75rem !important;
+    gap: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+  }
+
+  .mobile-grid-btn {
+    flex-shrink: 0 !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+  }
+
+  .nav-brand {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    gap: 0.4rem !important;
+  }
+
+  .brand-text {
+    white-space: nowrap !important;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+  }
+
+  .brand-icon-wrapper {
+    width: 30px !important;
+    height: 30px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .nav-actions {
+    flex-shrink: 0 !important;
+    margin-left: 0 !important;
+    gap: 0.4rem !important;
+  }
+
+  #nav-user-btn {
+    flex-shrink: 0 !important;
+  }
+
+  #nav-user-btn .btn,
+  #nav-user-btn button {
+    font-size: 0.78rem !important;
+    padding: 0.35rem 0.7rem !important;
+    white-space: nowrap !important;
+    border-radius: 20px !important;
+    max-width: 100px !important;
+  }
+
+  .btn-icon {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .desktop-nav-menu {
+    display: none !important;
+  }
+
+  /* ── HERO SECTION ── */
+  .hero-section {
+    padding: 2rem 1rem 1.5rem !important;
+    text-align: center !important;
+  }
+
+  .hero-title {
+    font-size: clamp(1.7rem, 7.5vw, 2.5rem) !important;
+    line-height: 1.18 !important;
+    margin-bottom: 1rem !important;
+    word-break: break-word !important;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem !important;
+    line-height: 1.55 !important;
+    margin-bottom: 1.5rem !important;
+    padding: 0 !important;
+  }
+
+  .hero-badge-wrapper {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.7rem !important;
+    flex-wrap: wrap !important;
+    gap: 0.3rem !important;
+    justify-content: center !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .hero-ctas {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0.75rem !important;
+    margin-bottom: 2rem !important;
+    align-items: stretch !important;
+  }
+
+  .hero-ctas .btn {
+    width: 100% !important;
+    font-size: 1rem !important;
+    padding: 0.85rem 1rem !important;
+    justify-content: center !important;
+  }
+
+  /* ── STATS BANNER ── */
+  .stats-banner {
+    padding: 1.5rem 0 !important;
+    margin-bottom: 2rem !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem 0.75rem !important;
+  }
+
+  .stat-item h3 {
+    font-size: 1.6rem !important;
+  }
+
+  .stat-item p {
+    font-size: 0.72rem !important;
+  }
+
+  /* ── CONTAINERS ── */
+  .container,
+  .container-wide {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  /* ── GRIDS ── */
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .component-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .component-card {
+    border-radius: 14px !important;
+  }
+
+  /* ── LIBRARY LAYOUT ── */
+  .library-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .category-sidebar {
+    position: static !important;
+    top: auto !important;
+    max-height: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    padding: 0.6rem 0.75rem !important;
+    border-radius: 12px !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+  }
+
+  .category-sidebar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .cat-btn {
+    flex: 0 0 auto !important;
+    font-size: 0.8rem !important;
+    padding: 0.45rem 0.85rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* ── SECTION HEADERS ── */
+  .section-header h1,
+  .section-header h2 {
+    font-size: 1.55rem !important;
+    word-break: break-word !important;
+  }
+
+  .section-header p {
+    font-size: 0.88rem !important;
+  }
+
+  /* ── GLASS PANELS ── */
+  .glass-panel {
+    border-radius: 14px !important;
+    padding: 1rem !important;
+  }
+
+  /* ── CODE VIEWER ── */
+  .code-viewer-container pre {
+    max-height: 260px !important;
+    font-size: 0.78rem !important;
+    padding: 0.85rem !important;
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+    overflow-x: auto !important;
+  }
+
+  /* ── PRICING ── */
+  .pricing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+
+  .pricing-card {
+    border-radius: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* ── MODALS ── */
+  .modal-content,
+  .auth-modal-box {
+    width: 93% !important;
+    max-width: 430px !important;
+    padding: 1.2rem !important;
+    border-radius: 16px !important;
+    margin: 0 auto !important;
+  }
+
+  .modal-overlay {
+    padding: 1rem 0.5rem !important;
+    align-items: flex-start !important;
+    padding-top: 3rem !important;
+  }
+
+  /* ── TOAST NOTIFICATIONS ── */
+  .toast-container {
+    bottom: 12px !important;
+    right: 12px !important;
+    left: 12px !important;
+    width: calc(100vw - 24px) !important;
+  }
+
+  .toast {
+    width: 100% !important;
+    font-size: 0.85rem !important;
+    padding: 10px 14px !important;
+  }
+
+  /* ── FOOTER ── */
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .footer-bottom {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    text-align: center !important;
+  }
+
+  /* ── HERO SHOWCASE (interactive widget dock) ── */
+  .hero-showcase {
+    padding: 6px !important;
+    border-radius: 16px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .hero-showcase-inner {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
+
+  .showcase-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 0.85rem !important;
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    flex-direction: row !important;
+    scrollbar-width: none !important;
+  }
+
+  .showcase-sidebar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .showcase-content {
+    padding: 1rem 0.75rem !important;
+    min-height: 200px !important;
+  }
+
+  /* ── FEATURE CARDS GRID (home page) ── */
+  .hero-feature-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+    max-width: 100% !important;
+  }
+
+  .hero-card-stat {
+    font-size: 1.8rem !important;
+  }
+
+  .hero-card-wide {
+    grid-column: auto !important;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    max-width: 100% !important;
+  }
+
+  /* ── TABLES ── */
+  table,
+  .data-table-wrapper {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+  }
+
+  /* ── FLOATING REWARD CARD ── */
+  .floating-reward-card {
+    width: calc(100vw - 32px) !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    left: 16px !important;
+    padding: 1rem !important;
+  }
+
+  /* ── MOBILE SIDEBAR DRAWER ── */
+  .mobile-sidebar-drawer {
+    width: min(300px, 88vw) !important;
+  }
+
+  /* ── INTERVIEW / ROADMAP pro lock boxes ── */
+  details {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  details > div {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* ── SECTION SPACING ── */
+  .app-view > .container,
+  .app-view > .container-wide {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  /* ── KPI CARDS (dashboard) ── */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  /* ── BLOG / PROJECT CARDS ── */
+  .projects-grid,
+  .blogs-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Fix inline-style grid with auto-fit min that overflows on mobile */
+  .pro-boxes-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── EXTRA SMALL PHONES (<= 480px) ── */
+@media screen and (max-width: 480px) {
+
+  .navbar {
+    padding: 0 0.6rem !important;
+    gap: 0.35rem !important;
+  }
+
+  .brand-text {
+    font-size: 0.95rem !important;
+  }
+
+  .brand-icon-wrapper {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .mobile-grid-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  #nav-user-btn .btn,
+  #nav-user-btn button {
+    font-size: 0.72rem !important;
+    padding: 0.3rem 0.55rem !important;
+    max-width: 85px !important;
+  }
+
+  .hero-title {
+    font-size: clamp(1.55rem, 8vw, 1.95rem) !important;
+  }
+
+  .hero-subtitle {
+    font-size: 0.85rem !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── VERY SMALL PHONES (<= 360px) ── */
+@media screen and (max-width: 360px) {
+
+  .navbar {
+    padding: 0 0.5rem !important;
+    gap: 0.25rem !important;
+  }
+
+  .brand-text {
+    font-size: 0.88rem !important;
+  }
+
+  .brand-icon-wrapper {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  #nav-user-btn .btn,
+  #nav-user-btn button {
+    font-size: 0.65rem !important;
+    padding: 0.25rem 0.4rem !important;
+    max-width: 72px !important;
+  }
+
+  .hero-title {
+    font-size: 1.45rem !important;
+  }
+
+  .hero-ctas .btn {
+    font-size: 0.88rem !important;
+    padding: 0.75rem 0.8rem !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+  }
+}

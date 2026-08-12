@@ -104,8 +104,9 @@ app.use((err, req, res, next) => {
 const DEFAULT_PORT = process.env.PORT || 5000;
 
 function startServer(port) {
-  const server = app.listen(port, () => {
-    console.log(`🚀 FlutterHub Server running live on http://localhost:${port}`);
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 FlutterHub Server running on http://0.0.0.0:${port}`);
+    console.log(`📱 Mobile testing: http://192.168.1.5:${port}`);
     console.log(`💳 Razorpay Live Key ID: ${process.env.RAZORPAY_KEY_ID}`);
     console.log(`⚡ Supabase URL: ${process.env.SUPABASE_URL}`);
   });
