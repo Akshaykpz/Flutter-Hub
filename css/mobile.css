@@ -180,19 +180,36 @@ html, body {
     position: static !important;
     top: auto !important;
     max-height: none !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.6rem !important;
+    padding: 0.65rem 0.75rem !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .sidebar-search-container {
+    width: 100% !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    border-bottom: none !important;
+  }
+
+  .category-buttons-scroll {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
     gap: 6px !important;
-    padding: 0.6rem 0.75rem !important;
-    border-radius: 12px !important;
-    white-space: nowrap !important;
+    width: 100% !important;
+    padding-bottom: 4px !important;
     scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .category-sidebar::-webkit-scrollbar {
+  .category-buttons-scroll::-webkit-scrollbar {
     display: none !important;
   }
 
@@ -480,5 +497,88 @@ html, body {
   .stats-grid {
     grid-template-columns: 1fr 1fr !important;
     gap: 0.75rem !important;
+  }
+}
+
+/* ── RESPONSIVE PAYMENT & RAZORPAY MODAL OVERRIDES ── */
+@media screen and (max-width: 640px) {
+  .modal-overlay {
+    padding: 0.75rem !important;
+  }
+
+  .modal-container {
+    padding: 1.25rem 1rem !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    border-radius: 16px !important;
+    width: 100% !important;
+  }
+
+  .razorpay-header {
+    padding: 1rem !important;
+    margin: -1.25rem -1rem 1.25rem -1rem !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .plan-select-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .plan-select-grid .btn {
+    width: 100% !important;
+    padding: 0.75rem 0.6rem !important;
+    font-size: 0.88rem !important;
+  }
+
+  #rzp-pay-confirm-btn {
+    font-size: 0.92rem !important;
+    padding: 0.85rem 0.5rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .coupon-box {
+    padding: 0.75rem 0.85rem !important;
+  }
+
+  .coupon-label-wrapper {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+  }
+
+  .coupon-input-group {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+  }
+
+  #checkout-coupon-input {
+    min-width: 0 !important;
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.6rem !important;
+  }
+}
+
+@media screen and (max-width: 380px) {
+  .coupon-input-group {
+    flex-direction: column !important;
+  }
+
+  .coupon-input-group button {
+    width: 100% !important;
+  }
+
+  .razorpay-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .razorpay-header > div:last-child {
+    text-align: left !important;
   }
 }

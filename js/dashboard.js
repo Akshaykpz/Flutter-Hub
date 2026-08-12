@@ -89,9 +89,20 @@ const Dashboards = {
   // USER DASHBOARD
   // ------------------------------------------------------------------------
   renderUserDashboard: function () {
-    const user = AuthManager.currentUser;
     const container = document.getElementById('user-dashboard-content');
     if (!container) return;
+
+    // Resolve user object — try AuthManager first, then localStorage
+    let user = (window.AuthManager && AuthManager.currentUser) || null;
+    if (!user) {
+      try {
+        const saved = localStorage.getItem('flutterhub_user');
+        if (saved) {
+          user = JSON.parse(saved);
+          if (window.AuthManager) AuthManager.currentUser = user;
+        }
+      } catch (e) {}
+    }
 
     if (!user) {
       container.innerHTML = `
@@ -133,88 +144,165 @@ const Dashboards = {
       return;
     }
 
-    const favoriteIds = AuthManager.normalizeFavorites(AuthManager.getFavorites());
+    // ---- Safe data extraction ----
+    let favoriteIds = [];
+    try {
+      favoriteIds = (window.AuthManager && typeof AuthManager.getFavorites === 'function')
+        ? AuthManager.normalizeFavorites(AuthManager.getFavorites())
+        : [];
+    } catch (e) { favoriteIds = []; }
 
-    container.innerHTML = `
-      <div class="glass-panel" style="padding:2rem; margin-bottom:2rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
-          <div style="display:flex; align-items:center; gap:1.25rem;">
-            <div class="avatar-large">${AuthManager.getAvatarHTML ? AuthManager.getAvatarHTML(user) : (user.avatar || '👤')}</div>
+    const allComponents = (window.FLUTTER_DATA && Array.isArray(FLUTTER_DATA.components)) ? FLUTTER_DATA.components : [];
+    const userName = (user.name || user.full_name || user.email || 'User').trim();
+    const userEmail = (user.email || '').trim();
+    const userJoined = user.joinedDate || 'Member';
+
+    let avatarHTML = '';
+    try {
+      avatarHTML = (window.AuthManager && typeof AuthManager.getAvatarHTML === 'function')
+        ? AuthManager.getAvatarHTML(user)
+        : `<span style="font-weight:800; text-transform:uppercase; font-size:14px; color:#fff;">${(userName[0] || 'U').toUpperCase()}</span>`;
+    } catch (e) {
+      avatarHTML = `<span style="font-weight:800; font-size:14px; color:#fff;">${(userName[0] || 'U').toUpperCase()}</span>`;
+    }
+
+    const isPro = !!(user.isPro || user.isSubscribed || user.subscription === 'pro');
+    const downloadsCount = typeof user.downloadsCount === 'number' ? user.downloadsCount : 0;
+
+    let favComponents = [];
+    try {
+      if (favoriteIds.length > 0 && window.AuthManager && typeof AuthManager.normalizeFavoriteId === 'function') {
+        favComponents = allComponents.filter(c => c && favoriteIds.includes(AuthManager.normalizeFavoriteId(c.id)));
+      }
+    } catch (e) { favComponents = []; }
+
+    let favCardsHTML = '';
+    try {
+      if (favComponents.length === 0) {
+        favCardsHTML = `<div style="grid-column:1/-1; padding:3rem 1.5rem; text-align:center; color:var(--text-muted); background:var(--bg-card); border-radius:16px; border:1px solid var(--border-color);">
+          <div style="font-size:2.5rem; margin-bottom:0.75rem;">❤️</div>
+          <h4 style="font-size:1.1rem; color:var(--text-bright); margin-bottom:0.5rem;">No bookmarked components yet</h4>
+          <p style="font-size:0.875rem;">Click the heart icon on any Flutter widget to save it to your personal developer dashboard.</p>
+          <button class="btn btn-primary btn-sm" style="margin-top:1rem;" onclick="App.switchView('components')">Browse Components</button>
+        </div>`;
+      } else {
+        favCardsHTML = favComponents.map(c => {
+          try {
+            return typeof App.createComponentCardHTML === 'function' ? App.createComponentCardHTML(c) : '';
+          } catch (e) {
+            console.error("Error generating card for component:", c, e);
+            return '';
+          }
+        }).join('');
+      }
+    } catch (e) { favCardsHTML = ''; }
+
+    let couponsHTML = '';
+    try {
+      couponsHTML = (window.CouponManager && typeof CouponManager.renderUserCouponsHTML === 'function')
+        ? CouponManager.renderUserCouponsHTML()
+        : '';
+    } catch (e) { couponsHTML = ''; }
+
+    // ---- Render full dashboard ----
+    try {
+      container.innerHTML = `
+        <div class="glass-panel" style="padding:2rem; margin-bottom:2rem; border-radius:20px; border:1px solid var(--border-color);">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.25rem;">
+            <div style="display:flex; align-items:center; gap:1.25rem;">
+              <div class="avatar-large" style="width:56px; height:56px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#38bdf8,#8b5cf6);">${avatarHTML}</div>
+              <div>
+                <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">${userName}</h2>
+                <p style="color:var(--text-secondary); font-size:0.88rem;">${userEmail}${userJoined ? ' • Member since ' + userJoined : ''}</p>
+              </div>
+            </div>
             <div>
-              <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-bright);">${user.name}</h2>
-              <p style="color:var(--text-secondary); font-size:0.9rem;">${user.email} • Member since ${user.joinedDate}</p>
+              ${isPro
+                ? `<span class="badge badge-pro" style="padding:0.55rem 1.1rem; font-size:0.85rem; font-weight:800;">✨ PRO SUBSCRIBER (ACTIVE)</span>`
+                : `<button class="btn btn-premium" onclick="PaymentGateway && PaymentGateway.openCheckout ? PaymentGateway.openCheckout() : App.switchView('pricing')">Upgrade to Pro ₹29/mo</button>`
+              }
             </div>
           </div>
-          <div>
-            ${user.isPro
-        ? `<span class="badge badge-pro" style="padding:0.5rem 1rem; font-size:0.85rem;">✨ PRO SUBSCRIBER (₹29/mo ACTIVE)</span>`
-        : `<button class="btn btn-premium" onclick="PaymentGateway.openCheckout()">Upgrade to Pro ₹29/mo</button>`
-      }
+        </div>
+
+        <div class="kpi-grid" style="margin-bottom:2.5rem;">
+          <div class="kpi-card">
+            <span class="kpi-title">Saved Bookmarks</span>
+            <span class="kpi-value">${favoriteIds.length}</span>
+            <span class="kpi-trend positive">Saved components</span>
+          </div>
+          <div class="kpi-card purple">
+            <span class="kpi-title">Total Snippets Downloaded</span>
+            <span class="kpi-value">${downloadsCount}</span>
+            <span class="kpi-trend positive">Flutter Dart files</span>
+          </div>
+          <div class="kpi-card emerald">
+            <span class="kpi-title">Plan Status</span>
+            <span class="kpi-value">${isPro ? 'Pro' : 'Free'}</span>
+            <span class="kpi-trend positive">${isPro ? 'Unlimited Access' : 'Upgrade available'}</span>
+          </div>
+          <div class="kpi-card amber">
+            <span class="kpi-title">API Keys</span>
+            <span class="kpi-value">Active</span>
+            <span class="kpi-trend positive">v2.0 Developer SDK</span>
           </div>
         </div>
-      </div>
 
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <span class="kpi-title">Saved Bookmarks</span>
-          <span class="kpi-value">${favoriteIds.length}</span>
-          <span class="kpi-trend positive">Saved components</span>
+        <!-- Reward Coupons Section -->
+        <div style="margin-bottom:2.5rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+            <h3 style="font-size:1.25rem; font-weight:700; color:var(--text-bright);">🎟️ My Reward Coupons</h3>
+            <button class="btn btn-primary btn-sm" style="font-size:0.8rem;" onclick="CouponManager && CouponManager.openScratchCardModal && CouponManager.openScratchCardModal()">🎁 Open Scratch Card</button>
+          </div>
+          <div id="user-dashboard-coupons-container">
+            ${couponsHTML}
+          </div>
         </div>
-        <div class="kpi-card purple">
-          <span class="kpi-title">Total Snippets Downloaded</span>
-          <span class="kpi-value">${user.downloadsCount}</span>
-          <span class="kpi-trend positive">Flutter Dart files</span>
-        </div>
-        <div class="kpi-card emerald">
-          <span class="kpi-title">Plan Status</span>
-          <span class="kpi-value">${user.isPro ? 'Pro' : 'Free'}</span>
-          <span class="kpi-trend positive">${user.isPro ? 'Unlimited Access' : 'Upgrade available'}</span>
-        </div>
-        <div class="kpi-card amber">
-          <span class="kpi-title">API Keys</span>
-          <span class="kpi-value">Active</span>
-          <span class="kpi-trend positive">v2.0 Developer SDK</span>
-        </div>
-      </div>
 
-      <!-- Reward Coupons Section -->
-      <div style="margin-bottom:2.5rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-          <h3 style="font-size:1.25rem; font-weight:700; color:var(--text-bright);">🎟️ My Reward Coupons</h3>
-          <button class="btn btn-primary btn-sm" style="font-size:0.8rem;" onclick="CouponManager.openScratchCardModal()">🎁 Open Scratch Card</button>
+      `;
+    } catch (renderErr) {
+      console.error("Dashboard render error:", renderErr);
+      // Safe minimal profile fallback that still shows user data
+      container.innerHTML = `
+        <div class="glass-panel" style="padding:2rem; margin-bottom:2rem; border-radius:20px; border:1px solid var(--border-color);">
+          <div style="display:flex; align-items:center; gap:1.25rem;">
+            <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#38bdf8,#8b5cf6); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.35rem; color:#fff; flex-shrink:0;">${(userName[0] || 'U').toUpperCase()}</div>
+            <div>
+              <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">${userName}</h2>
+              <p style="color:var(--text-secondary); font-size:0.88rem;">${userEmail}${userJoined ? ' • Member since ' + userJoined : ''}</p>
+            </div>
+          </div>
         </div>
-        <div id="user-dashboard-coupons-container">
-          ${window.CouponManager ? CouponManager.renderUserCouponsHTML() : ''}
+        <div style="text-align:center; padding:2rem;">
+          <button class="btn btn-primary" onclick="App.switchView('components')">Browse Components</button>
         </div>
-      </div>
+      `;
+    }
 
-      <h3 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:var(--text-bright);">Your Bookmarked Components</h3>
-      <div class="component-grid">
-        ${favoriteIds.length === 0
-        ? `<div style="grid-column:1/-1; padding:3rem; text-align:center; color:var(--text-muted); background:var(--bg-card); border-radius:16px;">No bookmarked components yet! Click the heart icon on any component to save it here.</div>`
-        : FLUTTER_DATA.components
-          .filter(c => favoriteIds.includes(AuthManager.normalizeFavoriteId(c.id)))
-          .map(c => App.createComponentCardHTML(c))
-          .join('')
-      }
-      </div>
-    `;
-
-    if (window.CouponManager) {
+    // Async: fetch and update coupons
+    if (window.CouponManager && typeof CouponManager.fetchMyCoupons === 'function') {
       CouponManager.fetchMyCoupons().then(() => {
         const couponsEl = document.getElementById('user-dashboard-coupons-container');
-        if (couponsEl) couponsEl.innerHTML = CouponManager.renderUserCouponsHTML();
-      });
+        if (couponsEl) {
+          try { couponsEl.innerHTML = CouponManager.renderUserCouponsHTML(); } catch (e) {}
+        }
+      }).catch(err => console.warn("Fetch coupons notice:", err));
     }
 
-    if (favoriteIds.length > 0) {
-      FLUTTER_DATA.components
-        .filter(c => favoriteIds.includes(AuthManager.normalizeFavoriteId(c.id)))
-        .forEach(c => {
-          if (c.simType) FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
-        });
+    // Async: render FlutterSim widgets
+    if (favComponents.length > 0 && window.FlutterSim) {
+      favComponents.forEach(c => {
+        if (c.simType) {
+          try {
+            FlutterSim.renderWidget(c.simType, `sim-${c.id}`);
+          } catch (e) {
+            console.warn("FlutterSim render error for", c.id, e);
+          }
+        }
+      });
     }
   },
+
 
   // ------------------------------------------------------------------------
   // ADMIN DASHBOARD MASTER RENDERER

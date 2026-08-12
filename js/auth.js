@@ -308,6 +308,21 @@ const AuthManager = {
       cleanAvatar = (name[0] || 'U').toUpperCase();
     }
 
+    // Derive joinedDate from createdAt / created_at field returned by server
+    let joinedDate = fallback.joinedDate || null;
+    if (!joinedDate) {
+      const rawDate = data?.createdAt || data?.created_at || data?.joinedDate || null;
+      if (rawDate) {
+        try {
+          const d = new Date(rawDate);
+          if (!isNaN(d.getTime())) {
+            joinedDate = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+          }
+        } catch (e) {}
+      }
+      if (!joinedDate) joinedDate = 'Member';
+    }
+
     return {
       id: data?.id || data?._id || fallback.id || null,
       name,
@@ -318,7 +333,7 @@ const AuthManager = {
       avatar: cleanAvatar,
       bookmarks: this.normalizeFavorites(Array.isArray(fallback.bookmarks) ? fallback.bookmarks : (data?.bookmarks || [])),
       downloadsCount: fallback.downloadsCount || data?.downloadsCount || 0,
-      joinedDate: fallback.joinedDate || 'July 2026',
+      joinedDate,
       subscriptionExpiresAt: data?.subscriptionExpiresAt || data?.subscription_expires_at || null
     };
   },
@@ -1355,21 +1370,21 @@ const AuthManager = {
                 <div style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${email}</div>
                 <span class="badge ${isPro ? 'badge-pro' : 'badge-cyan'}" style="font-size:0.65rem; margin-top:4px; display:inline-block;">${isPro ? '✨ PRO ACTIVE' : 'FREE PLAN'}</span>
               </div>
-              <a href="#" class="dropdown-item" onclick="App.switchView('user-dashboard'); AuthManager.closeUserDropdown(); return false;">
-                <span style="display:flex; align-items:center; gap:8px;">👤 Profile & Account</span>
+              <a href="#" class="dropdown-item" onclick="App.openUserDashboard(); return false;">
+                <span style="display:flex; align-items:center; gap:8px;">Profile & Account</span>
               </a>
               <a href="#" class="dropdown-item" onclick="App.switchView('pricing'); AuthManager.closeUserDropdown(); return false;">
-                <span style="display:flex; align-items:center; gap:8px;">💳 Pricing & Plans</span>
+                <span style="display:flex; align-items:center; gap:8px;">Pricing & Plans</span>
                 <span class="badge badge-pro" style="font-size:0.65rem; padding:2px 6px;">₹29/mo</span>
               </a>
               ${isAdmin ? `
                 <a href="#" class="dropdown-item" onclick="App.switchView('admin-dashboard'); AuthManager.closeUserDropdown(); return false;">
-                  <span style="display:flex; align-items:center; gap:8px; color:#f59e0b; font-weight:700;">👑 Admin Control Panel</span>
+                  <span style="display:flex; align-items:center; gap:8px; color:#f59e0b; font-weight:700;">Admin Control Panel</span>
                 </a>
               ` : ''}
               <div class="user-dropdown-divider" style="height:1px; background:var(--border-subtle); margin:4px 0;"></div>
               <a href="#" class="dropdown-item logout-item" onclick="AuthManager.confirmLogout(); AuthManager.closeUserDropdown(); return false;">
-                <span style="display:flex; align-items:center; gap:8px; color:var(--accent-rose); font-weight:600;">🚪 Sign Out</span>
+                <span style="display:flex; align-items:center; gap:8px; color:var(--accent-rose); font-weight:600;">Sign Out</span>
               </a>
             </div>
           </div>
@@ -1410,7 +1425,7 @@ const AuthManager = {
             <span class="badge ${isPro ? 'badge-pro' : 'badge-cyan'}" style="font-size:0.65rem;">${isPro ? 'PRO' : 'FREE'}</span>
           </div>
           <div style="display:flex; gap:6px;">
-            <button class="btn btn-primary btn-sm" style="flex:1; font-size:0.8rem; padding:0.4rem;" onclick="App.switchView('user-dashboard'); App.closeMobileMenu();">
+            <button class="btn btn-primary btn-sm" style="flex:1; font-size:0.8rem; padding:0.4rem;" onclick="App.openUserDashboard();">
               My Profile
             </button>
             <button class="btn btn-secondary btn-sm" style="font-size:0.8rem; padding:0.4rem 0.6rem; color:var(--accent-rose);" onclick="App.closeMobileMenu(); AuthManager.confirmLogout();">

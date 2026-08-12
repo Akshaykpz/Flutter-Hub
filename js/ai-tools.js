@@ -110,19 +110,29 @@ String name = user.name!;
 // Solution:
 String name = user.name ?? 'Guest User';`,
       };
+
     }
 
     if (logStr.includes('ProviderNotFoundException') || logStr.includes('Could not find the correct Provider')) {
+
       return {
+
         title: '⚠️ Provider Context Exception',
+
         diagnosis: 'The BuildContext passed to Provider.of(context) does not contain the Provider ancestor.',
+
         fix: `Wrap your widget tree above the context lookup with MultiProvider or ProviderScope:
 
 // Solution:
+
 void main() {
+
   runApp(
+
     ProviderScope(
+    
       child: const MyApp(),
+
     ),
   );
 }`,
@@ -157,4 +167,8 @@ final ThemeData customDarkTheme = ThemeData(
 );`;
   },
 };
+
+
+
+
 

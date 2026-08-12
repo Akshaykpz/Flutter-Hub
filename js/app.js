@@ -256,6 +256,74 @@ const App = {
     }
   },
 
+  openUserDashboard: function () {
+    this.switchView('user-dashboard');
+    this.closeMobileMenu();
+    if (window.AuthManager && typeof AuthManager.closeUserDropdown === 'function') {
+      AuthManager.closeUserDropdown();
+    }
+  },
+
+  renderUserDashboardFallback: function () {
+    const container = document.getElementById('user-dashboard-content');
+    if (!container) return;
+
+    const user = (window.AuthManager && AuthManager.currentUser) || null;
+    const escape = (value) => this.escapeHTML(value || '');
+
+    if (!user) {
+      container.innerHTML = `
+        <div class="glass-panel" style="padding:3rem 2rem; text-align:center; max-width:620px; margin:3rem auto; border-radius:20px; border:1px solid rgba(56,189,248,0.3);">
+          <div style="width:62px; height:62px; border-radius:50%; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.35); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; color:#38bdf8;">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+          <span class="badge badge-cyan" style="margin-bottom:0.75rem;">PROFILE & ACCOUNT</span>
+          <h2 style="font-size:1.85rem; font-weight:800; color:var(--text-bright); margin-bottom:0.75rem;">Sign In to Your Account</h2>
+          <p style="color:var(--text-secondary); margin-bottom:1.75rem; font-size:0.95rem; line-height:1.6;">Access your profile, saved bookmarks, downloads, coupons, and Pro plan status.</p>
+          <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-lg" onclick="AuthManager.openAuthModal('signin')">Sign In</button>
+            <button class="btn btn-secondary btn-lg" onclick="AuthManager.openAuthModal('signup')">Create Account</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const name = escape(user.name || user.full_name || user.email || 'User');
+    const email = escape(user.email || '');
+    const joined = escape(user.joinedDate || 'Member');
+    const isPro = !!(user.isPro || user.isSubscribed || user.subscription === 'pro' || user.isAdmin);
+    const favorites = window.AuthManager && typeof AuthManager.getFavorites === 'function' ? AuthManager.getFavorites().length : 0;
+    const downloads = typeof user.downloadsCount === 'number' ? user.downloadsCount : 0;
+    const avatarHTML = window.AuthManager && typeof AuthManager.getAvatarHTML === 'function'
+      ? AuthManager.getAvatarHTML(user)
+      : `<span style="font-weight:800; color:#fff;">${name.charAt(0).toUpperCase() || 'U'}</span>`;
+
+    container.innerHTML = `
+      <div class="glass-panel" style="padding:2rem; margin-bottom:2rem; border-radius:20px; border:1px solid var(--border-color);">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.25rem;">
+          <div style="display:flex; align-items:center; gap:1.25rem; min-width:0;">
+            <div class="avatar-large" style="width:56px; height:56px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#38bdf8,#8b5cf6);">${avatarHTML}</div>
+            <div style="min-width:0;">
+              <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem; overflow-wrap:anywhere;">${name}</h2>
+              <p style="color:var(--text-secondary); font-size:0.88rem; overflow-wrap:anywhere;">${email}${joined ? ' - Member since ' + joined : ''}</p>
+            </div>
+          </div>
+          ${isPro
+            ? `<span class="badge badge-pro" style="padding:0.55rem 1.1rem; font-size:0.85rem; font-weight:800;">PRO ACTIVE</span>`
+            : `<button class="btn btn-premium" onclick="window.PaymentGateway && PaymentGateway.openCheckout ? PaymentGateway.openCheckout() : App.switchView('pricing')">Upgrade to Pro Rs.29/mo</button>`
+          }
+        </div>
+      </div>
+      <div class="kpi-grid" style="margin-bottom:2rem;">
+        <div class="kpi-card"><span class="kpi-title">Saved Bookmarks</span><span class="kpi-value">${favorites}</span><span class="kpi-trend positive">Saved components</span></div>
+        <div class="kpi-card purple"><span class="kpi-title">Downloads</span><span class="kpi-value">${downloads}</span><span class="kpi-trend positive">Flutter files</span></div>
+        <div class="kpi-card emerald"><span class="kpi-title">Plan Status</span><span class="kpi-value">${isPro ? 'Pro' : 'Free'}</span><span class="kpi-trend positive">${isPro ? 'Unlimited access' : 'Upgrade available'}</span></div>
+        <div class="kpi-card amber"><span class="kpi-title">Account</span><span class="kpi-value">Active</span><span class="kpi-trend positive">Developer profile</span></div>
+      </div>
+    `;
+  },
+
   switchView: function (viewId) {
     if (viewId === 'blog') viewId = 'blogs';
     this.currentView = viewId;
@@ -283,7 +351,18 @@ const App = {
     if (viewId === 'projects') this.renderProjects();
     if (viewId === 'blogs' || viewId === 'blog') this.renderBlogs();
     if (viewId === 'pricing') this.switchPricingCycle('monthly');
-    if (viewId === 'user-dashboard' && window.Dashboards && typeof Dashboards.renderUserDashboard === 'function') Dashboards.renderUserDashboard();
+    if (viewId === 'user-dashboard') {
+      this.renderUserDashboardFallback();
+      if (window.Dashboards && typeof Dashboards.renderUserDashboard === 'function') {
+        Dashboards.renderUserDashboard();
+      } else {
+        setTimeout(() => {
+          if (window.Dashboards && typeof Dashboards.renderUserDashboard === 'function') {
+            Dashboards.renderUserDashboard();
+          }
+        }, 50);
+      }
+    }
     if (viewId === 'admin-dashboard' && window.Dashboards && typeof Dashboards.renderAdminDashboard === 'function') Dashboards.renderAdminDashboard();
 
     // Automatically close mobile menu drawer on view switch
@@ -451,7 +530,7 @@ const App = {
     const favCount = favIds.length;
 
     let html = `
-      <div style="padding:0.25rem 0.25rem 0.85rem 0.25rem; margin-bottom:0.85rem; border-bottom:1px solid var(--border-color);">
+      <div class="sidebar-search-container" style="padding:0.25rem 0.25rem 0.85rem 0.25rem; margin-bottom:0.85rem; border-bottom:1px solid var(--border-color);">
         <div style="position:relative;">
           <input type="text" id="sidebar-component-search" placeholder="🔍 Search components..." 
             value="${this.escapeHTML(this.componentSearchQuery || '')}"
@@ -464,15 +543,16 @@ const App = {
         </div>
       </div>
 
-      <button class="cat-btn ${this.activeCategory === 'all' ? 'active' : ''}" onclick="App.filterCategory('all')">
-        <span>All Components</span>
-        <span class="cat-count">${uniqueComps.length}</span>
-      </button>
+      <div class="category-buttons-scroll">
+        <button class="cat-btn ${this.activeCategory === 'all' ? 'active' : ''}" onclick="App.filterCategory('all')">
+          <span>All Components</span>
+          <span class="cat-count">${uniqueComps.length}</span>
+        </button>
 
-      <button class="cat-btn ${this.activeCategory === 'favorites' ? 'active' : ''}" onclick="App.filterCategory('favorites')">
-        <span style="display:flex; align-items:center; gap:6px;">❤️ Favorites</span>
-        <span id="fav-count-badge" class="cat-count" style="background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3);">${favCount}</span>
-      </button>
+        <button class="cat-btn ${this.activeCategory === 'favorites' ? 'active' : ''}" onclick="App.filterCategory('favorites')">
+          <span style="display:flex; align-items:center; gap:6px;">❤️ Favorites</span>
+          <span id="fav-count-badge" class="cat-count" style="background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3);">${favCount}</span>
+        </button>
     `;
 
     FLUTTER_DATA.categories.forEach(cat => {
@@ -484,6 +564,8 @@ const App = {
         </button>
       `;
     });
+
+    html += `</div>`;
 
     container.innerHTML = html;
   },
