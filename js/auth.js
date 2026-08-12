@@ -937,14 +937,24 @@ const AuthManager = {
   },
 
   getOAuthRedirectUrl: function () {
+    const productionOrigin = 'https://flutter-hub-six.vercel.app';
+    const protocol = window.location.protocol;
     const hostname = window.location.hostname;
+    const origin = window.location.origin;
+
+    if (protocol !== 'http:' && protocol !== 'https:') {
+      return `${productionOrigin}/`;
+    }
+
+    if (!hostname || origin === 'null') {
+      return `${productionOrigin}/`;
+    }
+
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `${window.location.origin}/`;
+      return `${productionOrigin}/`;
     }
-    if (hostname.includes('vercel.app')) {
-      return `https://${hostname}/`;
-    }
-    return `${window.location.origin}/`;
+
+    return `${origin}/`;
   },
 
   // Social Auth Handlers (Google & GitHub)
@@ -963,7 +973,6 @@ const AuthManager = {
 
     // Dynamic redirect URL supporting mobile browsers, desktop & deployed domains (Vercel & localhost)
     const redirectUrl = this.getOAuthRedirectUrl();
-    const currentOrigin = window.location.origin;
 
     // Direct Supabase JS Client (no backend hop — faster, especially on mobile)
     if (window.supabase) {
@@ -1030,7 +1039,6 @@ const AuthManager = {
 
     // Dynamic redirect URL supporting mobile browsers, desktop & deployed domains (Vercel & localhost)
     const redirectUrl = this.getOAuthRedirectUrl();
-    const currentOrigin = window.location.origin;
 
     // Direct Supabase JS Client (no backend hop — faster, especially on mobile)
     if (window.supabase) {

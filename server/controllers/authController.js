@@ -289,22 +289,34 @@ const getOAuthUrl = async (req, res) => {
 
     // Resolve dynamic redirect URL for both mobile & desktop devices (and deployed environments)
     let redirectTo = req.query.redirectTo || req.query.redirect_uri || req.query.origin;
+    const productionOrigin = process.env.SITE_URL || process.env.APP_URL || process.env.FRONTEND_URL || 'https://flutter-hub-six.vercel.app';
+
+    if (redirectTo) {
+      try {
+        const requestedUrl = new URL(redirectTo);
+        const isLocalRedirect = requestedUrl.hostname === 'localhost' || requestedUrl.hostname === '127.0.0.1';
+        if (isLocalRedirect) {
+          redirectTo = productionOrigin;
+        }
+      } catch (e) {
+        redirectTo = productionOrigin;
+      }
+    }
 
     if (!redirectTo) {
-      if (process.env.SITE_URL) {
-        redirectTo = process.env.SITE_URL;
-      } else if (process.env.APP_URL) {
-        redirectTo = process.env.APP_URL;
-      } else if (process.env.FRONTEND_URL) {
-        redirectTo = process.env.FRONTEND_URL;
+      const forwardedProto = req.get('x-forwarded-proto');
+      const forwardedHost = req.get('x-forwarded-host');
+      const requestHost = forwardedHost || req.get('host') || '';
+      const isLocalHost = requestHost.startsWith('localhost') || requestHost.startsWith('127.0.0.1');
+
+      if (!isLocalHost && requestHost) {
+        redirectTo = `${forwardedProto || req.protocol || 'https'}://${requestHost}`;
+      } else if (productionOrigin) {
+        redirectTo = productionOrigin;
       } else if (process.env.VERCEL_URL) {
         redirectTo = `https://${process.env.VERCEL_URL}`;
       } else {
-        const forwardedProto = req.get('x-forwarded-proto');
-        const forwardedHost = req.get('x-forwarded-host');
-        const protocol = forwardedProto || req.protocol || 'https';
-        const host = forwardedHost || req.get('host') || 'flutter-hub-six.vercel.app';
-        redirectTo = `${protocol}://${host}`;
+        redirectTo = 'https://flutter-hub-six.vercel.app';
       }
     }
 

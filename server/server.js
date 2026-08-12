@@ -4,6 +4,7 @@
    ========================================================================== */
 
 const path = require('path');
+const os = require('os');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
@@ -102,13 +103,31 @@ app.use((err, req, res, next) => {
 
 // Start Server with EADDRINUSE Fallback Handling
 const DEFAULT_PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
+
+function getLocalNetworkAddress() {
+  const interfaces = os.networkInterfaces();
+
+  for (const addresses of Object.values(interfaces)) {
+    for (const address of addresses || []) {
+      if (address.family === 'IPv4' && !address.internal) {
+        return address.address;
+      }
+    }
+  }
+
+  return null;
+}
 
 function startServer(port) {
-  const server = app.listen(port, '0.0.0.0', () => {
-    console.log(`🚀 FlutterHub Server running on http://0.0.0.0:${port}`);
-    console.log(`📱 Mobile testing: http://192.168.1.5:${port}`);
-    console.log(`💳 Razorpay Live Key ID: ${process.env.RAZORPAY_KEY_ID}`);
-    console.log(`⚡ Supabase URL: ${process.env.SUPABASE_URL}`);
+  const server = app.listen(port, HOST, () => {
+    const networkAddress = getLocalNetworkAddress();
+
+    console.log(`FlutterHub Server running: http://localhost:${port}`);
+    console.log(`Network testing URL: ${networkAddress ? `http://${networkAddress}:${port}` : 'No LAN address detected'}`);
+    console.log(`Listening host: ${HOST}`);
+    console.log(`Razorpay Key ID: ${process.env.RAZORPAY_KEY_ID || 'Not configured'}`);
+    console.log(`Supabase URL: ${process.env.SUPABASE_URL || 'Not configured'}`);
   });
 
   server.on('error', (err) => {
