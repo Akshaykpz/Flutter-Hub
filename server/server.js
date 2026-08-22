@@ -40,6 +40,13 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/content', require('./routes/contentRoutes'));
 app.use('/api/coupons', require('./routes/couponRoutes'));
+app.use('/api/jobs', require('./routes/jobRoutes'));
+app.use('/api/packages', require('./routes/packageRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
+
+// Start Job Sync Scheduler (daily cron + startup sync)
+require('./jobs/scheduler');
+
 
 // Serve Static Frontend Files (index.html, css, js)
 app.use(express.static(path.join(__dirname, '..')));

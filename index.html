@@ -15,6 +15,9 @@
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/mobile.css">
+  <link rel="stylesheet" href="css/packages.css">
+  <link rel="stylesheet" href="css/jobs.css">
+  <link rel="stylesheet" href="css/ai-agent.css">
 
   <!-- Official Razorpay Checkout JS SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
@@ -180,8 +183,8 @@
       <!-- Desktop Navigation Menu -->
       <ul class="nav-menu desktop-nav-menu">
         <li><a href="#" class="nav-link active" onclick="App.switchView('home')">Home</a></li>
-        <li><a href="#" class="nav-link" onclick="App.switchView('components')">Components</a></li>
-        <li><a href="#" class="nav-link" onclick="App.switchView('projects')">Packages</a></li>
+        <li><a href="#" class="nav-link" onclick="App.handleNavClick(event, 'components', false)">Components</a></li>
+        <li><a href="#" class="nav-link" onclick="App.handleNavClick(event, 'projects', false)">Packages <span class="badge badge-green" style="font-size:0.6rem; padding:1px 5px; margin-left:2px;">NEW</span></a></li>
 
         <!-- Learn Dropdown -->
         <li class="nav-dropdown">
@@ -354,29 +357,49 @@
       </div>
     </div>
 
-    <!-- 5. PACKAGES & PROJECTS VIEW -->
+    <!-- 5. FLUTTER PACKAGE DIRECTORY VIEW -->
     <div id="view-projects" class="app-view" style="display:none;">
-      <div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
-        <div
-          style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
-          <div>
-            <span class="badge badge-cyan" style="margin-bottom:0.5rem;">PACKAGES & TEMPLATES</span>
-            <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Packages & Full Projects
-            </h1>
-            <p style="color:var(--text-secondary);">Production-ready Flutter apps, full architectural templates & pub
-              package blueprints.</p>
-          </div>
-          <div style="position:relative; width:100%; max-width:320px;">
-            <input type="text" placeholder="🔍 Search projects..." oninput="App.renderProjects(this.value)"
-              style="width:100%; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:10px; font-size:0.85rem;" />
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-              style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.3-4.3"></path>
-            </svg>
+      <div class="container-wide pkg-page-wrapper">
+
+        <!-- Hero Banner -->
+        <div class="pkg-hero">
+          <div class="pkg-hero-content">
+            <div class="pkg-hero-badge">📦 PACKAGE DIRECTORY</div>
+            <h1>Flutter Package<br><span class="text-gradient">Discovery Hub</span></h1>
+            <p>Explore the best Flutter & Dart packages across every category — curated from pub.dev with real stats, install commands, and documentation links.</p>
+            <div class="pkg-hero-stats" id="pkg-hero-stats"></div>
           </div>
         </div>
-        <div class="grid grid-3" id="projects-grid" style="gap:1.5rem;"></div>
+
+        <!-- Two-column layout -->
+        <div class="pkg-layout">
+
+          <!-- Category Sidebar -->
+          <aside class="pkg-sidebar glass-panel" id="pkg-category-sidebar" aria-label="Package categories"></aside>
+
+          <!-- Main Content -->
+          <div class="pkg-main">
+            <!-- Mobile Responsive Category Dropdown -->
+            <select id="pkg-mobile-cat-select" class="pkg-mobile-cat-select" onchange="PackagesView.selectCategory(this.value)">
+              <option value="all">📦 All Categories</option>
+            </select>
+            <!-- Toolbar: search + sort -->
+            <div id="pkg-toolbar"></div>
+            <!-- Package Grid -->
+            <div class="pkg-grid" id="pkg-grid" role="list"></div>
+            <!-- Load More / Pagination -->
+            <div class="pkg-pagination" id="pkg-pagination"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 5.5. DEDICATED PACKAGE DETAILS PAGE VIEW -->
+    <div id="view-package-detail" class="app-view" style="display:none;">
+      <div class="container pkg-detail-page" id="pkg-detail-page-container">
+        <!-- Rendered dynamically by PackagesView.openDetail() -->
       </div>
     </div>
 
@@ -434,26 +457,36 @@
 
     <!-- 8. JOBS BOARD VIEW -->
     <div id="view-jobs" class="app-view" style="display:none;">
-      <div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
-        <div
-          style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:2rem;">
-          <div>
-            <span class="badge badge-cyan" style="margin-bottom:0.5rem;">CAREER & HIRING</span>
-            <h1 style="font-size:2.25rem; font-weight:800; color:var(--text-bright);">Flutter Developer Job Board</h1>
-            <p style="color:var(--text-secondary);">Verified high-paying Flutter developer roles at top tech companies
-              worldwide & remote.</p>
-          </div>
-          <div style="position:relative; width:100%; max-width:320px;">
-            <input type="text" placeholder="🔍 Search remote, senior, location..." oninput="App.renderJobs(this.value)"
-              style="width:100%; background:var(--bg-tertiary); border:1px solid var(--border-color); color:#fff; padding:0.6rem 1rem 0.6rem 2.2rem; border-radius:10px; font-size:0.85rem;" />
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-              style="position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.3-4.3"></path>
-            </svg>
+      <div class="container-wide job-page-wrapper">
+
+        <!-- Hero Banner -->
+        <div class="job-hero">
+          <div class="job-hero-content">
+            <div class="job-hero-badge-row" id="job-hero-badge-row">
+              <div class="job-hero-badge">🎯 10 FREE FLUTTER JOBS</div>
+              <span class="badge badge-cyan" style="font-size:0.72rem;">Curated Flutter & Dart Feed</span>
+            </div>
+            <h1>Flutter Developer<br><span class="text-gradient">Job Board</span></h1>
+            <p>Real-time Flutter and Dart job openings from top tech companies and startups worldwide. Verified authentic vacancies with original application portals.</p>
+            <div class="job-sync-bar" id="job-sync-bar"></div>
           </div>
         </div>
-        <div id="jobs-container" class="grid grid-3" style="gap:1.5rem;"></div>
+
+        <!-- Admin / Debug Sync Panel (Hidden by default or toggled via ?admin=1) -->
+        <div id="job-admin-panel" class="job-admin-panel" style="display:none;"></div>
+
+        <!-- Search + Filter Chips Toolbar -->
+        <div class="job-toolbar" id="job-toolbar"></div>
+
+        <!-- Result Meta -->
+        <div class="job-result-meta" id="job-result-meta"></div>
+
+        <!-- Jobs Grid Container -->
+        <div class="job-grid" id="job-grid" role="list"></div>
+
+        <!-- Pagination / Load More -->
+        <div class="job-pagination" id="job-pagination"></div>
+
       </div>
     </div>
 
@@ -1092,7 +1125,7 @@
           </form>
 
           <div class="auth-footer-link">
-            <a href="#" onclick="App.switchView('login'); return false;">Back to Sign In</a>
+            <a href="#" onclick="AuthManager.switchAuthModalTab('signin'); return false;">Back to Sign In</a>
           </div>
         </div>
       </div>
@@ -1671,6 +1704,114 @@
     </div>
   </footer>
 
+  <!-- Persistent Floating AI Assistant Launcher (Bottom-Right on All Pages) -->
+  <button id="ai-floating-trigger" class="ai-floating-trigger" onclick="FlutterAIAgent.toggleChatWindow()" title="Ask Flutter Hub AI" aria-label="Open Flutter Hub AI">
+    <span class="ai-floating-icon">🤖</span>
+    <span class="ai-floating-text">Flutter AI</span>
+    <span class="ai-floating-dot"></span>
+  </button>
+
+  <!-- Floating AI Chat Window Popup -->
+  <div id="ai-floating-widget" class="ai-floating-window" style="display:none;" role="dialog" aria-label="Flutter AI Assistant">
+    <!-- Header -->
+    <div class="ai-floating-header">
+      <div class="ai-header-brand">
+        <div class="ai-header-avatar">🤖</div>
+        <div class="ai-header-title-wrap">
+          <div class="ai-header-title">Flutter Hub <span class="text-gradient">AI</span></div>
+          <div class="ai-header-subtitle">● Online • Flutter & Dart</div>
+        </div>
+      </div>
+      <div class="ai-header-actions">
+        <span id="ai-auto-voice-toggle" class="ai-auto-voice-pill" onclick="FlutterAIAgent.toggleAutoVoice()" title="Toggle Voice Response">
+          🔈 Voice: OFF
+        </span>
+        <button class="ai-header-btn" onclick="FlutterAIAgent.clearChat()" title="Clear Chat History">🗑️</button>
+        <button class="ai-header-btn" onclick="FlutterAIAgent.toggleChatWindow()" title="Close Window">✕</button>
+      </div>
+    </div>
+
+    <!-- Quota status for Free / Pro -->
+    <div class="ai-floating-quota-bar" id="ai-quota-counter">
+      <span>Daily AI Queries: <strong>15/15</strong> remaining</span>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="ai-messages-container" id="ai-messages-list">
+      <div class="ai-msg ai-msg--assistant" id="ai-bubble-welcome_msg">
+        <div class="ai-msg-avatar">🤖</div>
+        <div class="ai-msg-content">
+          <h4 style="color:#38bdf8; margin:0 0 4px 0;">Flutter Hub AI</h4>
+          <p style="margin:0 0 6px 0; font-size:0.85rem;">Hey there! I'm FlutterHub AI, a general AI assistant with deep Flutter and Dart expertise. Ask anything, or get help with code, packages, jobs, screenshots, and debugging.</p>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">Type below, attach a screenshot, or tap <strong>mic</strong> to speak.</p>
+          <div class="ai-msg-actions">
+            <button id="ai-voice-btn-welcome_msg" class="ai-voice-btn" onclick="FlutterAIAgent.speakMessage('welcome_msg')">
+              🔊 Listen
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Prompts Slider -->
+    <div class="ai-prompts-bar">
+      <button class="ai-prompt-chip" onclick="FlutterAIAgent.sendPrompt('Why am I getting RenderFlex overflow?')">⚠️ Fix RenderFlex Overflow</button>
+      <button class="ai-prompt-chip" onclick="FlutterAIAgent.sendPrompt('Which package should I use for state management?')">🔄 Riverpod vs BLoC</button>
+      <button class="ai-prompt-chip" onclick="FlutterAIAgent.sendPrompt('Find remote Flutter jobs')">💼 Remote Jobs</button>
+      <button class="ai-prompt-chip" onclick="FlutterAIAgent.sendPrompt('Create a Flutter login screen with Riverpod')">📱 Login Screen</button>
+      <button class="ai-prompt-chip" onclick="FlutterAIAgent.sendPrompt('How to fix Null check operator crash?')">🛡️ Fix Null Check</button>
+    </div>
+
+    <!-- Image Attachment Staging Preview Bar -->
+    <div id="ai-image-staging-bar" class="ai-image-staging-bar" style="display:none;"></div>
+
+    <!-- Bottom Input Bar (STT Voice + Image Attachment + Text) -->
+    <div class="ai-input-wrapper">
+      <input
+        type="file"
+        id="ai-file-input"
+        accept="image/*"
+        style="display:none;"
+        onchange="FlutterAIAgent.handleImageFile(this.files[0])"
+      />
+      <button
+        type="button"
+        class="ai-icon-btn"
+        onclick="FlutterAIAgent.triggerImagePicker()"
+        title="Attach Screenshot / Layout Image (PNG, JPG)">
+        📎
+      </button>
+      <input
+        type="text"
+        id="ai-user-input"
+        class="ai-input-field"
+        placeholder="Ask anything, or paste a screenshot (Ctrl+V)..."
+        autocomplete="off"
+      />
+      <button
+        type="button"
+        id="ai-mic-btn"
+        class="ai-icon-btn"
+        onclick="FlutterAIAgent.toggleVoiceInput()"
+        title="Voice Input (Speech to Text)">
+        🎤
+      </button>
+      <button
+        type="button"
+        class="ai-icon-btn"
+        onclick="FlutterAIAgent.stopGeneration()"
+        title="Stop generation">
+        Stop
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary ai-send-btn"
+        onclick="FlutterAIAgent.sendMessage(document.getElementById('ai-user-input').value)">
+        Send ↗
+      </button>
+    </div>
+  </div>
+
   <!-- JS Dependencies -->
   <script src="js/data.js" defer></script>
   <script src="js/flutter-sim.js" defer></script>
@@ -1682,6 +1823,13 @@
   <script src="js/interview.js" defer></script>
   <script src="js/community.js" defer></script>
   <script src="js/dashboard.js" defer></script>
+  <!-- Package Directory -->
+  <script src="js/packages-data.js" defer></script>
+  <script src="js/packages.js" defer></script>
+  <!-- Job Board System -->
+  <script src="js/jobs.js" defer></script>
+  <!-- AI Agent -->
+  <script src="js/ai-agent.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 

@@ -340,7 +340,7 @@ const App = {
     if (viewId === 'home') this.animateCounters();
     if (viewId === 'roadmaps') this.renderRoadmaps();
     if (viewId === 'documentation') this.renderDocumentation();
-    if (viewId === 'jobs') this.renderJobs();
+    if (viewId === 'jobs') { if (window.JobsView) JobsView.render(); else this.renderJobs(); }
     if (viewId === 'interview') this.renderInterview();
     if (viewId === 'community') this.renderCommunity();
     if (viewId === 'downloads') this.renderDownloads();
@@ -348,7 +348,8 @@ const App = {
     if (viewId === 'ui-screens') this.renderUIScreens();
     if (viewId === 'animations') this.renderAnimations();
     if (viewId === 'state-management') this.renderStateManagement();
-    if (viewId === 'projects') this.renderProjects();
+    if (viewId === 'projects') { if (window.PackagesView) PackagesView.render(); else this.renderProjects(); }
+    if (viewId === 'ai') { if (window.FlutterAIAgent) FlutterAIAgent.openChatWindow(); }
     if (viewId === 'blogs' || viewId === 'blog') this.renderBlogs();
     if (viewId === 'pricing') this.switchPricingCycle('monthly');
     if (viewId === 'user-dashboard') {
@@ -530,12 +531,13 @@ const App = {
     const favCount = favIds.length;
 
     let html = `
-      <div class="sidebar-search-container" style="padding:0.25rem 0.25rem 0.85rem 0.25rem; margin-bottom:0.85rem; border-bottom:1px solid var(--border-color);">
+      <div class="sidebar-search-container" style="padding:0.25rem 0.25rem 0.85rem 0.25rem; margin-bottom:0.75rem; border-bottom:1px solid var(--border-color);">
         <div style="position:relative;">
           <input type="text" id="sidebar-component-search" placeholder="🔍 Search components..." 
             value="${this.escapeHTML(this.componentSearchQuery || '')}"
             oninput="App.handleComponentSearch(this.value)" 
-            style="width:100%; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-bright); padding:0.55rem 0.85rem 0.55rem 2.2rem; border-radius:10px; font-size:0.85rem;" />
+            style="width:100%; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-bright); padding:0.6rem 0.85rem 0.6rem 2.3rem; border-radius:10px; font-size:0.83rem; outline:none; transition:border-color 0.2s;" 
+            onfocus="this.style.borderColor='rgba(56,189,248,0.5)'" onblur="this.style.borderColor='var(--border-color)'" />
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--text-muted);">
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.3-4.3"></path>
@@ -550,7 +552,7 @@ const App = {
         </button>
 
         <button class="cat-btn ${this.activeCategory === 'favorites' ? 'active' : ''}" onclick="App.filterCategory('favorites')">
-          <span style="display:flex; align-items:center; gap:6px;">❤️ Favorites</span>
+          <span style="display:flex; align-items:center; gap:5px; overflow:hidden;"><span style="flex-shrink:0;">❤️</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Favorites</span></span>
           <span id="fav-count-badge" class="cat-count" style="background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3);">${favCount}</span>
         </button>
     `;
