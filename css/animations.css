@@ -182,29 +182,9 @@
   flex-shrink: 0;
 }
 
-/* Razorpay Payment Simulator Styles */
+/* Razorpay Payment Modal Base */
 .razorpay-modal {
-  max-width: 480px;
-}
-
-.razorpay-header {
-  background: #092640;
-  padding: 1.5rem;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  margin: -2.25rem -2.25rem 1.5rem -2.25rem;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.rzp-logo {
-  font-weight: 800;
-  font-size: 1.25rem;
-  color: #2563eb;
-  background: #fff;
-  padding: 0.25rem 0.65rem;
-  border-radius: 4px;
+  max-width: 500px;
 }
 
 .payment-options-grid {

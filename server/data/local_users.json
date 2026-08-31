@@ -1,0 +1,14 @@
+[
+  {
+    "id": "be3e357f-c37f-4cfa-89e6-d59bfc09298d",
+    "name": "Amal Test",
+    "email": "amaltest99@gmail.com",
+    "passwordHash": "84472380e7d2461cf8b1cbfb673c725e100b218dc940bc2f4e75ca2715b5ae5d",
+    "isPro": false,
+    "is_subscribed": false,
+    "subscription": "free",
+    "role": "user",
+    "created_at": "2026-08-30T18:04:40.606Z",
+    "source": "local_fallback"
+  }
+]

@@ -637,6 +637,49 @@
   flex-shrink: 0;
 }
 
+/* Stop / Cancel generation button (shown only while the AI is streaming) */
+.ai-stop-btn {
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  color: #fca5a5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ai-stop-btn:hover {
+  background: rgba(244, 63, 94, 0.22);
+  border-color: #f43f5e;
+  color: #ffffff;
+}
+
+.ai-stop-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* "Stopped" indicator shown under a partial/cancelled AI response */
+.ai-stopped-badge {
+  margin-top: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+}
+
 /* Typing Indicator */
 .ai-typing-indicator {
   display: inline-flex;

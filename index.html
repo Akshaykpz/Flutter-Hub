@@ -5,8 +5,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flutter Hub - Build Production Flutter Apps 10x Faster</title>
-  <meta name="description"
-    content="The world's best Flutter component library and developer resource platform inspired by shadcn/ui and Aceternity UI. Copy & preview production-ready Flutter code.">
+  <meta name="description" content="The premier developer platform for Flutter UI components, animation physics, state management blueprints, and production app source code.">
+
+  <!-- Brand Favicons & App Icons (Transparent PNG) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon.png?v=2">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/images/favicon-64.png?v=2">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png?v=2">
+  <link rel="shortcut icon" type="image/png" href="assets/images/favicon.png?v=2">
+
+  <!-- Open Graph & Twitter Social Card Images -->
+  <meta property="og:title" content="Flutter Hub - Learn Flutter & Build Apps 10x Faster">
+  <meta property="og:description" content="The premier developer platform for Flutter UI components, animation physics, state management blueprints, and production app source code.">
+  <meta property="og:image" content="assets/images/flutterhub-logo.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Flutter Hub - Learn Flutter & Build Apps">
+  <meta name="twitter:description" content="Build Production Flutter Apps 10x Faster with pre-built UI components and Flutter AI Agent.">
+  <meta name="twitter:image" content="assets/images/flutterhub-logo.png">
+
+
 
   <!-- Core CSS -->
 
@@ -40,12 +57,7 @@
     <div class="drawer-header-brand">
       <div class="drawer-brand-info">
         <div class="drawer-brand-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff">
-            <rect x="3" y="3" width="7" height="7" rx="2"></rect>
-            <rect x="14" y="3" width="7" height="7" rx="2"></rect>
-            <rect x="3" y="14" width="7" height="7" rx="2"></rect>
-            <rect x="14" y="14" width="7" height="7" rx="2"></rect>
-          </svg>
+          <img src="assets/images/flutterhub-logo.png" alt="Flutter Hub Logo" class="brand-img">
         </div>
         <div>
           <div class="drawer-brand-title">Flutter Hub</div>
@@ -170,12 +182,7 @@
       <!-- Logo Brand (Matching Image 1 & 2) -->
       <a href="#" class="nav-brand" onclick="App.handleBrandClick(event)" title="Flutter Hub Home">
         <div class="brand-icon-wrapper">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff">
-            <rect x="3" y="3" width="7" height="7" rx="2"></rect>
-            <rect x="14" y="3" width="7" height="7" rx="2"></rect>
-            <rect x="3" y="14" width="7" height="7" rx="2"></rect>
-            <rect x="14" y="14" width="7" height="7" rx="2"></rect>
-          </svg>
+          <img src="assets/images/flutterhub-logo.png" alt="Flutter Hub Logo" class="brand-img">
         </div>
         <span class="brand-text">Flutter<span class="text-gradient-flutter">Hub</span></span>
       </a>
@@ -563,7 +570,7 @@
             <button id="billing-btn-monthly" class="btn btn-sm btn-primary" onclick="App.switchPricingCycle('monthly')"
               style="border-radius:8px;">Monthly (₹29/mo)</button>
             <button id="billing-btn-yearly" class="btn btn-sm btn-secondary" onclick="App.switchPricingCycle('yearly')"
-              style="border-radius:8px;">Yearly (₹199/yr - Save 42%)</button>
+              style="border-radius:8px;">Yearly (₹299/yr - Best Value)</button>
           </div>
         </div>
 
@@ -578,7 +585,7 @@
             <div style="font-size:2.8rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">₹29 <span
                 style="font-size:1rem; font-weight:500; color:var(--text-muted);">/ month</span></div>
             <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.5rem;">Full access to all Pro
-              Flutter widgets, source code & interview guides.</p>
+              Flutter widgets, source code &amp; interview guides.</p>
             <ul
               style="list-style:none; padding:0; margin:0 0 2rem 0; display:flex; flex-direction:column; gap:10px; font-size:0.9rem; color:var(--text-secondary);">
               <li style="display:flex; align-items:center; gap:8px;"><span
@@ -586,14 +593,14 @@
               <li style="display:flex; align-items:center; gap:8px;"><span
                   style="color:#38bdf8; font-weight:bold;">✓</span> 500+ Production Screen Templates</li>
               <li style="display:flex; align-items:center; gap:8px;"><span
-                  style="color:#38bdf8; font-weight:bold;">✓</span> 50 Full Interview Questions & Detailed Scripts</li>
+                  style="color:#38bdf8; font-weight:bold;">✓</span> 50 Full Interview Questions &amp; Detailed Scripts</li>
               <li style="display:flex; align-items:center; gap:8px;"><span
                   style="color:#38bdf8; font-weight:bold;">✓</span> All Widget Architecture Guides</li>
               <li style="display:flex; align-items:center; gap:8px;"><span
                   style="color:#38bdf8; font-weight:bold;">✓</span> Commercial Use License</li>
             </ul>
             <button class="btn btn-primary btn-lg" style="width:100%; margin-top:auto;"
-              onclick="PaymentGateway.openCheckout()">
+              onclick="PaymentGateway.openCheckout('monthly')">
               ⚡ Get Monthly Pass — ₹29
             </button>
           </div>
@@ -603,12 +610,12 @@
             style="padding:2.25rem; border-radius:20px; border:1px solid var(--border-color); position:relative; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
               <span class="badge badge-pro">YEARLY PASS (BEST VALUE)</span>
-              <span style="font-size:0.85rem; color:#f59e0b; font-weight:700;">SAVE 42%</span>
+              <span style="font-size:0.85rem; color:#f59e0b; font-weight:700;">SAVE 14%</span>
             </div>
-            <div style="font-size:2.8rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">₹199 <span
+            <div style="font-size:2.8rem; font-weight:800; color:var(--text-bright); margin-bottom:0.25rem;">₹299 <span
                 style="font-size:1rem; font-weight:500; color:var(--text-muted);">/ year</span></div>
             <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1.5rem;">Everything in Monthly plus
-              full projects, priority updates & AI utilities.</p>
+              full projects, priority updates &amp; AI utilities.</p>
             <ul
               style="list-style:none; padding:0; margin:0 0 2rem 0; display:flex; flex-direction:column; gap:10px; font-size:0.9rem; color:var(--text-secondary);">
               <li style="display:flex; align-items:center; gap:8px;"><span
@@ -616,15 +623,15 @@
               <li style="display:flex; align-items:center; gap:8px;"><span
                   style="color:#8b5cf6; font-weight:bold;">✓</span> 100+ Full Project Source Code (.zip)</li>
               <li style="display:flex; align-items:center; gap:8px;"><span
-                  style="color:#8b5cf6; font-weight:bold;">✓</span> AI Suite: JSON to Dart & Log Analyzer</li>
+                  style="color:#8b5cf6; font-weight:bold;">✓</span> AI Suite: JSON to Dart &amp; Log Analyzer</li>
               <li style="display:flex; align-items:center; gap:8px;"><span
-                  style="color:#8b5cf6; font-weight:bold;">✓</span> Resume Templates & Freelance Agreements</li>
+                  style="color:#8b5cf6; font-weight:bold;">✓</span> Resume Templates &amp; Freelance Agreements</li>
               <li style="display:flex; align-items:center; gap:8px;"><span
                   style="color:#8b5cf6; font-weight:bold;">✓</span> 1 Year Unlimited Updates</li>
             </ul>
             <button class="btn btn-premium btn-lg" style="width:100%; margin-top:auto;"
-              onclick="PaymentGateway.openCheckout()">
-              💎 Get Yearly Pass — ₹199
+              onclick="PaymentGateway.openCheckout('yearly')">
+              💎 Get Yearly Pass — ₹299
             </button>
           </div>
         </div>
@@ -1369,70 +1376,102 @@
     </div>
   </div>
 
-  <!-- Razorpay Payment Gateway Modal -->
+  <!-- Ultra-Premium Razorpay Payment Gateway Modal -->
   <div id="razorpay-modal" class="modal-overlay">
-    <div class="modal-container razorpay-modal">
-      <button class="modal-close" onclick="PaymentGateway.closeCheckout()">✕</button>
+    <div class="modal-container razorpay-checkout-modal">
+      <!-- Glowing Top Accent Line -->
+      <div class="checkout-modal-accent-bar"></div>
 
-      <div class="razorpay-header">
-        <div>
-          <span class="rzp-logo" style="font-weight:800; font-size:1.2rem; color:var(--text-bright);">Razorpay</span>
-          <span style="font-size:0.75rem; margin-left:8px; color:var(--text-muted);">Secure Gateway</span>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:0.75rem; color:var(--text-muted);">Selected Plan</div>
-          <div id="modal-price-display" style="font-weight:800; font-size:1.15rem; color:#38bdf8;">₹300 / year</div>
-        </div>
-      </div>
+      <!-- Close Button -->
+      <button class="checkout-modal-close" onclick="PaymentGateway.closeCheckout()" aria-label="Close modal">✕</button>
 
-      <!-- Plan Selection -->
-      <div style="margin-bottom:1.25rem;">
-        <h3 style="font-size:0.9rem; font-weight:700; color:var(--text-bright); margin-bottom:8px;">Choose Subscription Plan</h3>
-        <div class="plan-select-grid">
-          <button id="plan-select-monthly" class="btn btn-sm btn-secondary"
-            style="padding:0.65rem 0.5rem; font-weight:700;"
-            onclick="PaymentGateway.selectPlan('monthly')">Monthly Pass (₹29/mo)</button>
-          <button id="plan-select-yearly" class="btn btn-sm btn-primary"
-            style="padding:0.65rem 0.5rem; font-weight:700;"
-            onclick="PaymentGateway.selectPlan('yearly')">Yearly Pass (₹300/yr • Save 14%)</button>
+      <!-- Modal Header -->
+      <div class="checkout-modal-header">
+        <div class="checkout-brand-box">
+          <div class="checkout-brand-badge">
+            <span class="brand-sparkle">⚡</span>
+            <span class="brand-title">FlutterHub <span class="pro-gradient-tag">PRO</span></span>
+          </div>
+          <div class="checkout-secure-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>Razorpay Verified Gateway 🛡️</span>
+          </div>
         </div>
       </div>
 
-      <!-- Primary Checkout Payment Button -->
-      <button id="rzp-pay-confirm-btn" class="btn btn-premium"
-        style="width:100%; padding:0.95rem 0.75rem; font-size:1rem; font-weight:800; border-radius:12px; margin-bottom:1.25rem; word-break:break-word; white-space:normal; line-height:1.3;"
-        onclick="PaymentGateway.openRealRazorpayPopup()">
-        Launch Razorpay Checkout (₹300/yr)
+      <!-- Plan Selection Cards -->
+      <div class="checkout-section">
+        <div class="checkout-section-title">Choose Access Plan</div>
+        <div class="checkout-plan-grid">
+          
+          <!-- Yearly Card (Default Active) -->
+          <div id="plan-select-yearly" class="checkout-plan-card active" onclick="PaymentGateway.selectPlan('yearly')">
+            <div class="plan-card-badge">BEST VALUE</div>
+            <div class="plan-card-header">
+              <span class="plan-card-name">Yearly Pass</span>
+              <span class="plan-card-radio"><span class="radio-inner"></span></span>
+            </div>
+            <div class="plan-card-price">
+              <span class="currency">₹</span><span class="amount">299</span><span class="period">/yr</span>
+            </div>
+            <div class="plan-card-sub">₹25/mo • Billed annually</div>
+          </div>
+
+          <!-- Monthly Card -->
+          <div id="plan-select-monthly" class="checkout-plan-card" onclick="PaymentGateway.selectPlan('monthly')">
+            <div class="plan-card-header">
+              <span class="plan-card-name">Monthly Pass</span>
+              <span class="plan-card-radio"><span class="radio-inner"></span></span>
+            </div>
+            <div class="plan-card-price">
+              <span class="currency">₹</span><span class="amount">29</span><span class="period">/mo</span>
+            </div>
+            <div class="plan-card-sub">Billed monthly • Cancel anytime</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Perks Included -->
+      <div class="checkout-perks-box">
+        <div class="perks-grid">
+          <div class="perk-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>1,000+ Premium Flutter Widgets &amp; UI Kits</span>
+          </div>
+          <div class="perk-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Full Dart Source Code &amp; Instant Downloads</span>
+          </div>
+          <div class="perk-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Instant UPI Support (Google Pay, PhonePe, Paytm)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coupon Input Box -->
+      <div class="checkout-coupon-container">
+        <div class="coupon-header-row">
+          <span class="coupon-title">🎁 Have a Promo / Scratch Coupon?</span>
+          <span class="coupon-hint">(10% OFF Yearly Plan)</span>
+        </div>
+        <div class="coupon-input-wrapper">
+          <input type="text" id="checkout-coupon-input" placeholder="e.g. WELCOME10-ABCD1234" spellcheck="false" autocomplete="off" />
+          <button class="btn-apply-coupon" onclick="PaymentGateway.handleApplyCouponClick()">Apply</button>
+        </div>
+        <div id="coupon-applied-breakdown" class="coupon-breakdown-msg"></div>
+      </div>
+
+      <!-- Primary Checkout CTA Button -->
+      <button id="rzp-pay-confirm-btn" class="checkout-pay-btn" onclick="PaymentGateway.openRealRazorpayPopup()">
+        Pay with Razorpay (₹299/yr)
       </button>
 
-      <!-- Promo / Scratch Coupon Code Input (Placed UNDER Payment Button) -->
-      <div class="coupon-box"
-        style="margin-bottom:1rem; background:rgba(56, 189, 248, 0.06); padding:0.85rem 1rem; border-radius:14px; border:1px dashed rgba(56, 189, 248, 0.3);">
-        <label class="coupon-label-wrapper">
-          <span>🎁 Have a Welcome / Promo Scratch Coupon?</span>
-          <span style="color:var(--text-muted); font-size:0.7rem;">(10% OFF Yearly Plan)</span>
-        </label>
-        <div class="coupon-input-group">
-          <input type="text" id="checkout-coupon-input" placeholder="e.g. WELCOME10-ABCD1234"
-            style="flex:1; min-width:0; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-bright); padding:0.5rem 0.75rem; border-radius:8px; font-size:0.85rem; font-family:var(--font-mono); text-transform:uppercase;" />
-          <button class="btn btn-primary btn-sm" style="font-weight:700; padding:0.5rem 1rem;"
-            onclick="PaymentGateway.handleApplyCouponClick()">Apply</button>
-        </div>
-        <div id="coupon-applied-breakdown"
-          style="display:none; margin-top:8px; font-size:0.8rem; color:#10b981; font-weight:600;">
-          <!-- Discount breakdown injected dynamically -->
-        </div>
-      </div>
 
-      <!-- Trust Badge -->
-      <div
-        style="text-align:center; font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; justify-content:center; gap:6px;">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span>256-Bit SSL Encrypted &amp; Secure Payment</span>
-      </div>
+
     </div>
   </div>
   <!-- Premium Required Protection Modal -->
@@ -1661,15 +1700,90 @@
     </div>
   </div>
 
+  <!-- Contact Us Modal -->
+  <div id="contact-modal" class="modal-overlay">
+    <div class="modal-container contact-modal">
+      <button class="modal-close" onclick="ContactManager.closeContactModal()" title="Close">✕</button>
+
+      <!-- FORM VIEW -->
+      <div id="contact-form-view">
+        <div class="contact-modal-head">
+          <div class="contact-modal-icon">📬</div>
+          <div style="min-width:0;">
+            <h3 style="margin:0 0 2px 0; font-size:1.1rem; color:var(--text-bright);">Get in Touch</h3>
+            <p style="margin:0; font-size:0.8rem; color:var(--text-muted);">
+              Tell us a little about yourself and how we can help.
+            </p>
+          </div>
+        </div>
+
+        <div id="contact-form-error" style="display:none; margin:12px 0; padding:10px 12px; border-radius:10px; font-size:0.82rem; color:#fca5a5; background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3);"></div>
+
+        <form id="contact-form" onsubmit="ContactManager.submitContact(event)" novalidate>
+          <div class="contact-field">
+            <label for="contact-name">Full Name *</label>
+            <input type="text" id="contact-name" class="contact-input" placeholder="Your name" autocomplete="name" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="contact-email">Email *</label>
+            <input type="email" id="contact-email" class="contact-input" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+
+          <div class="contact-field">
+            <label for="contact-purpose">Purpose of Inquiry *</label>
+            <select id="contact-purpose" class="contact-input" required>
+              <option value="" selected disabled>Select a purpose…</option>
+              <option value="General Inquiry">General Inquiry</option>
+              <option value="Support">Support / Bug Report</option>
+              <option value="Business / Partnership">Business / Partnership</option>
+              <option value="Feature Request">Feature Request</option>
+              <option value="Purchase / Pro Plan">Purchase / Pro Plan</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="contact-field">
+            <label for="contact-company">Company Name</label>
+            <input type="text" id="contact-company" class="contact-input" placeholder="Company (optional)" autocomplete="organization" />
+          </div>
+
+          <div class="contact-field">
+            <label for="contact-phone">Phone Number</label>
+            <input type="tel" id="contact-phone" class="contact-input" placeholder="+91 98765 43210 (optional)" autocomplete="tel" />
+          </div>
+
+          <div class="contact-field">
+            <label for="contact-message">Message</label>
+            <textarea id="contact-message" class="contact-input contact-textarea" rows="3" placeholder="How can we help? (optional)"></textarea>
+          </div>
+
+          <button type="submit" id="contact-submit-btn" class="btn btn-premium contact-submit-btn">
+            Send Message ↗
+          </button>
+        </form>
+      </div>
+
+      <!-- SUCCESS VIEW -->
+      <div id="contact-success-view" style="display:none; text-align:center; padding:1rem 0.5rem;">
+        <div class="contact-success-icon">✅</div>
+        <h3 style="margin:0.75rem 0 0.5rem 0; font-size:1.15rem; color:var(--text-bright);">Message Sent</h3>
+        <p id="contact-success-message" class="contact-success-text">
+          Thanks for reaching out — we've received your inquiry and will respond within one business day.
+        </p>
+        <button class="btn btn-primary" style="margin-top:1.25rem;"
+          onclick="ContactManager.closeContactModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SITE FOOTER -->
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-brand">
         <a href="#" class="nav-brand">
           <div class="brand-icon-wrapper">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M14 2 6 10l8 8M20 8l-6 6 6 6"></path>
-            </svg>
+            <img src="assets/images/flutterhub-logo.png" alt="Flutter Hub Logo" class="brand-img">
           </div>
           <span>Flutter<span class="text-gradient">Hub</span></span>
         </a>
@@ -1694,6 +1808,7 @@
           <li><a href="#" onclick="App.switchView('blog')">Developer Blog</a></li>
           <li><a href="#" onclick="App.switchView('pricing')">Pricing Plan</a></li>
           <li><a href="#" onclick="PaymentGateway.openCheckout()">₹29 Pro Pass</a></li>
+          <li><a href="#" onclick="ContactManager.openContactModal(); return false;">Contact Us</a></li>
         </ul>
       </div>
     </div>
@@ -1716,16 +1831,15 @@
     <!-- Header -->
     <div class="ai-floating-header">
       <div class="ai-header-brand">
-        <div class="ai-header-avatar">🤖</div>
+        <div class="ai-header-avatar" style="overflow:hidden; border-radius:50%; width:34px; height:34px; border:1px solid rgba(0,210,255,0.4); box-shadow:0 0 10px rgba(0,210,255,0.4);">
+          <img src="assets/images/flutterhub-logo.png" alt="Flutter Hub AI" style="width:100%; height:100%; object-fit:cover;">
+        </div>
         <div class="ai-header-title-wrap">
           <div class="ai-header-title">Flutter Hub <span class="text-gradient">AI</span></div>
           <div class="ai-header-subtitle">● Online • Flutter & Dart</div>
         </div>
       </div>
       <div class="ai-header-actions">
-        <span id="ai-auto-voice-toggle" class="ai-auto-voice-pill" onclick="FlutterAIAgent.toggleAutoVoice()" title="Toggle Voice Response">
-          🔈 Voice: OFF
-        </span>
         <button class="ai-header-btn" onclick="FlutterAIAgent.clearChat()" title="Clear Chat History">🗑️</button>
         <button class="ai-header-btn" onclick="FlutterAIAgent.toggleChatWindow()" title="Close Window">✕</button>
       </div>
@@ -1742,13 +1856,7 @@
         <div class="ai-msg-avatar">🤖</div>
         <div class="ai-msg-content">
           <h4 style="color:#38bdf8; margin:0 0 4px 0;">Flutter Hub AI</h4>
-          <p style="margin:0 0 6px 0; font-size:0.85rem;">Hey there! I'm FlutterHub AI, a general AI assistant with deep Flutter and Dart expertise. Ask anything, or get help with code, packages, jobs, screenshots, and debugging.</p>
-          <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">Type below, attach a screenshot, or tap <strong>mic</strong> to speak.</p>
-          <div class="ai-msg-actions">
-            <button id="ai-voice-btn-welcome_msg" class="ai-voice-btn" onclick="FlutterAIAgent.speakMessage('welcome_msg')">
-              🔊 Listen
-            </button>
-          </div>
+          <p style="margin:0 0 6px 0; font-size:0.85rem;">Your AI assistant for Flutter, Dart, programming, and everyday questions.</p>
         </div>
       </div>
     </div>
@@ -1765,42 +1873,23 @@
     <!-- Image Attachment Staging Preview Bar -->
     <div id="ai-image-staging-bar" class="ai-image-staging-bar" style="display:none;"></div>
 
-    <!-- Bottom Input Bar (STT Voice + Image Attachment + Text) -->
+    <!-- Bottom Input Bar (Text Chat) -->
     <div class="ai-input-wrapper">
-      <input
-        type="file"
-        id="ai-file-input"
-        accept="image/*"
-        style="display:none;"
-        onchange="FlutterAIAgent.handleImageFile(this.files[0])"
-      />
-      <button
-        type="button"
-        class="ai-icon-btn"
-        onclick="FlutterAIAgent.triggerImagePicker()"
-        title="Attach Screenshot / Layout Image (PNG, JPG)">
-        📎
-      </button>
       <input
         type="text"
         id="ai-user-input"
         class="ai-input-field"
-        placeholder="Ask anything, or paste a screenshot (Ctrl+V)..."
+        placeholder="Ask Flutter Hub AI anything..."
         autocomplete="off"
       />
       <button
         type="button"
-        id="ai-mic-btn"
-        class="ai-icon-btn"
-        onclick="FlutterAIAgent.toggleVoiceInput()"
-        title="Voice Input (Speech to Text)">
-        🎤
-      </button>
-      <button
-        type="button"
-        class="ai-icon-btn"
+        id="ai-stop-btn"
+        class="btn ai-stop-btn"
+        style="display:none;"
         onclick="FlutterAIAgent.stopGeneration()"
-        title="Stop generation">
+        title="Stop generating">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
         Stop
       </button>
       <button
@@ -1830,6 +1919,7 @@
   <script src="js/jobs.js" defer></script>
   <!-- AI Agent -->
   <script src="js/ai-agent.js" defer></script>
+  <script src="js/contact.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 

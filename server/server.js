@@ -1,6 +1,6 @@
 /* ==========================================================================
    FlutterHub Production Express Server Entrypoint
-   Configures CORS, dotenv, MongoDB, Razorpay APIs, Auth, and Content Routes
+   Configures CORS, dotenv, Supabase, Razorpay APIs, Auth, and Content Routes
    ========================================================================== */
 
 const path = require('path');
@@ -10,6 +10,16 @@ const express = require('express');
 const cors = require('cors');
 const supabase = require('./config/superbase');
 
+// ── Process-level crash guards ────────────────────────────────────────────────────────────────
+// Prevents any single unhandled promise rejection from crashing the entire server.
+process.on('uncaughtException', (err) => {
+  console.error('\x1b[31m[CRITICAL] Uncaught Exception — server will keep running:\x1b[0m', err.message);
+  console.error(err.stack);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('\x1b[31m[CRITICAL] Unhandled Promise Rejection — server will keep running:\x1b[0m', reason);
+});
+
 // Initialize Express App
 const app = express();
 
@@ -18,13 +28,21 @@ app.use(
   cors({
     origin: '*', // Allows Vercel frontend (https://flutter-hub-akshay.vercel.app) & local testing
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Razorpay-Signature'],
   })
 );
 
-// Body Parsing Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ⚠️  IMPORTANT: The Razorpay webhook route must be mounted BEFORE express.json()
+// because Razorpay HMAC signature verification requires the raw (unparsed) request body.
+// express.raw() captures it as a Buffer for the webhook handler only.
+app.post('/api/payment/webhook',
+  express.raw({ type: 'application/json' }),
+  require('./controllers/paymentController').handleWebhook
+);
+
+// Body Parsing Middleware (applied to all other routes — 50mb payload limit for AI chat streams)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Terminal Request Logging Middleware
 app.use((req, res, next) => {
@@ -42,6 +60,7 @@ app.use('/api/content', require('./routes/contentRoutes'));
 app.use('/api/coupons', require('./routes/couponRoutes'));
 app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/packages', require('./routes/packageRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Start Job Sync Scheduler (daily cron + startup sync)
@@ -52,11 +71,22 @@ require('./jobs/scheduler');
 app.use(express.static(path.join(__dirname, '..')));
 
 // Health Check Route
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  let supabaseStatus = 'unknown';
+  let supabaseLatency = null;
+  try {
+    const t = Date.now();
+    const { error } = await supabase.from('users').select('id', { count: 'exact', head: true });
+    supabaseLatency = Date.now() - t;
+    supabaseStatus = error ? 'error' : 'online';
+  } catch (_) {
+    supabaseStatus = 'unreachable';
+  }
   res.json({
     status: 'online',
     platform: 'FlutterHub Backend',
-    database: 'Supabase',
+    database: supabaseStatus,
+    supabaseLatencyMs: supabaseLatency,
     supabaseConfigured: !!process.env.SUPABASE_URL,
     razorpayKeyConfigured: !!process.env.RAZORPAY_KEY_ID,
     timestamp: new Date(),

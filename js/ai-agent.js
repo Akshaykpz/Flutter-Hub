@@ -10,6 +10,11 @@
 
 const FlutterAIAgent = (function () {
 
+  /* Sent from the SSE stream when the backend reports a user-friendly error
+     (e.g. quota/transient failures). Distinct class so the generic JSON/parse
+     catch doesn't swallow it. */
+  class BFriendlyError extends Error {}
+
   /* ── State ─────────────────────────────────────────────────── */
   const state = {
     isOpen: false,
@@ -29,8 +34,13 @@ const FlutterAIAgent = (function () {
     isPro: false,
     loading: false,
     abortController: null,
+    isStopped: false,
     initialized: false,
     lastUserPrompt: '',
+    // Voice (STT/TTS) and image (paste/upload screenshot) are kept modular
+    // but disabled in the UI until text chat is stable. Flip to true to re-enable.
+    voiceEnabled: false,
+    imageEnabled: false,
   };
 
   /* ── Voice & Speech Synthesis Init (Prioritizing Natural Female Voices) ── */
@@ -335,7 +345,7 @@ const FlutterAIAgent = (function () {
       state.isRecording = false;
       updateMicUI(false);
       const input = document.getElementById('ai-user-input');
-      if (input) input.placeholder = 'Ask anything, or paste a screenshot (Ctrl+V)...';
+      if (input) input.placeholder = 'Ask Flutter Hub AI anything...';
       if (event.error === 'not-allowed' && window.App && App.showToast) {
         App.showToast('Microphone access denied. Please enable mic permissions in your browser.', 'error');
       }
@@ -346,7 +356,7 @@ const FlutterAIAgent = (function () {
       updateMicUI(false);
       const input = document.getElementById('ai-user-input');
       if (input) {
-        input.placeholder = 'Ask anything, or paste a screenshot (Ctrl+V)...';
+        input.placeholder = 'Ask Flutter Hub AI anything...';
         const spokenText = input.value.trim();
         if (spokenText.length >= 2) {
           sendMessage(spokenText);
@@ -583,9 +593,11 @@ const FlutterAIAgent = (function () {
 
     state.loading = true;
     state.abortController = new AbortController();
+    updateChatControls();
 
     let accumulatedText = '';
     let toolDataPayload = null;
+    state.isStopped = false;
 
     try {
       const res = await fetch('/api/ai/chat/stream', {
@@ -597,7 +609,7 @@ const FlutterAIAgent = (function () {
         signal: state.abortController.signal,
         body: JSON.stringify({
           message: messageText,
-          image: attachedImg,
+          image: state.imageEnabled && attachedImg ? attachedImg : null,
           conversation_history: state.history.slice(-8).map(h => ({ role: h.role, content: h.content })),
         }),
       });
@@ -620,8 +632,17 @@ const FlutterAIAgent = (function () {
       let buffer = '';
 
       while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+        // Stop cooperating immediately once the user hits Stop
+        if (state.isStopped) break;
+
+        let value, done;
+        try {
+          ({ value, done } = await reader.read());
+        } catch (e) {
+          // AbortError from abort() -> a Stopped notice, not an error
+          break;
+        }
+        if (done || state.isStopped) break;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -647,10 +668,25 @@ const FlutterAIAgent = (function () {
               if (event.quota) state.quota = event.quota;
               updateQuotaUI();
             } else if (event.type === 'error') {
-              throw new Error(event.message || 'Stream error');
+              throw new BFriendlyError(event.message || 'I couldn\u2019t process that request right now. Please try again.');
             }
-          } catch (e) {}
+          } catch (e) {
+            if (e instanceof BFriendlyError) throw e;
+          }
+
+          if (state.isStopped) break;
         }
+      }
+
+      // User stopped the stream -> keep the partial text and mark it stopped
+      if (state.isStopped) {
+        finalizeAssistantBubble(assistantBubble, {
+          id: assistantMsgId,
+          content: accumulatedText || '_Generation stopped._',
+          toolData: toolDataPayload,
+          isStopped: true,
+        });
+        return;
       }
 
       // Save into message map for clean TTS speech
@@ -676,17 +712,21 @@ const FlutterAIAgent = (function () {
       }
 
     } catch (err) {
-      if (err.name === 'AbortError') return;
-      console.error('[FlutterAI] Stream error:', err.message);
+      if (err.name === 'AbortError' || state.isStopped) return;
+      console.error('[FlutterAI] Stream error:', err);
+      const friendlyMsg = err instanceof BFriendlyError
+        ? err.message
+        : 'I couldn\u2019t process that request right now. Please try again.';
       updateAssistantBubble(assistantBubble, {
         id: assistantMsgId,
-        content: `⚠️ **Connection Notice**: Could not complete AI query (${err.message}). Please retry.`,
+        content: `⚠️ ${friendlyMsg}`,
         isError: true,
         retryText: messageText,
       });
     } finally {
       state.loading = false;
       state.abortController = null;
+      updateChatControls();
     }
   }
 
@@ -769,25 +809,31 @@ const FlutterAIAgent = (function () {
     if (container) container.scrollTop = container.scrollHeight;
   }
 
-  function finalizeAssistantBubble(bubbleEl, { id, content, toolData }) {
+  function finalizeAssistantBubble(bubbleEl, { id, content, toolData, isStopped }) {
     if (!bubbleEl) return;
     const contentEl = bubbleEl.querySelector('.ai-msg-content');
     if (!contentEl) return;
 
     const formatted = formatMarkdown(content);
     const toolCardsHtml = toolData ? renderToolCards(toolData) : '';
-    const actionsHtml = `
+    const stoppedBadge = isStopped
+      ? `<div class="ai-stopped-badge">⏹ Stopped</div>`
+      : '';
+    const listenBtn = state.voiceEnabled
+      ? `<button id="ai-voice-btn-${id}" class="ai-voice-btn" onclick="FlutterAIAgent.speakMessage('${id}')">🔊 Listen</button>`
+      : '';
+    const actionsHtml = isStopped
+      ? `<div class="ai-msg-actions">${listenBtn}</div>`
+      : `
       <div class="ai-msg-actions">
-        <button id="ai-voice-btn-${id}" class="ai-voice-btn" onclick="FlutterAIAgent.speakMessage('${id}')">
-          🔊 Listen
-        </button>
+        ${listenBtn}
         <button class="ai-voice-btn" onclick="FlutterAIAgent.copyResponse('${id}')">
           📋 Copy
         </button>
       </div>
     `;
 
-    contentEl.innerHTML = formatted + toolCardsHtml + actionsHtml;
+    contentEl.innerHTML = formatted + stoppedBadge + toolCardsHtml + actionsHtml;
     const container = document.getElementById('ai-messages-list');
     if (container) container.scrollTop = container.scrollHeight;
   }
@@ -830,6 +876,13 @@ const FlutterAIAgent = (function () {
     }
   }
 
+  /* Toggle the Stop button visibility while the AI is generating */
+  function updateChatControls() {
+    const stopBtn = document.getElementById('ai-stop-btn');
+    if (!stopBtn) return;
+    stopBtn.style.display = state.loading ? 'inline-flex' : 'none';
+  }
+
   function clearChat() {
     stopSpeech();
     state.history = [];
@@ -838,7 +891,7 @@ const FlutterAIAgent = (function () {
 
     // Register welcome message
     const welcomeId = 'welcome_msg';
-    const welcomeText = "Hey there! I'm FlutterHub AI, a general AI assistant with deep Flutter and Dart expertise. Ask anything, or get help with Flutter code, packages, jobs, screenshots, and debugging.";
+    const welcomeText = "Your AI assistant for Flutter, Dart, programming, and everyday questions.";
     state.messagesMap.set(welcomeId, welcomeText);
 
     const container = document.getElementById('ai-messages-list');
@@ -849,12 +902,6 @@ const FlutterAIAgent = (function () {
           <div class="ai-msg-content">
             <h4 style="color:#38bdf8; margin:0 0 4px 0;">Flutter Hub AI</h4>
             <p style="margin:0 0 6px 0; font-size:0.85rem;">${welcomeText}</p>
-            <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">💡 Type below, attach a screenshot 📎, or tap <strong>🎤</strong> to speak.</p>
-            <div class="ai-msg-actions">
-              <button id="ai-voice-btn-${welcomeId}" class="ai-voice-btn" onclick="FlutterAIAgent.speakMessage('${welcomeId}')">
-                🔊 Listen
-              </button>
-            </div>
           </div>
         </div>
       `;
@@ -869,7 +916,7 @@ const FlutterAIAgent = (function () {
 
     // Register welcome message
     const welcomeId = 'welcome_msg';
-    const welcomeText = "Hey there! I'm FlutterHub AI, a general AI assistant with deep Flutter and Dart expertise. Ask anything, or get help with Flutter code, packages, jobs, screenshots, and debugging.";
+    const welcomeText = "Your AI assistant for Flutter, Dart, programming, and everyday questions.";
     state.messagesMap.set(welcomeId, welcomeText);
 
     try {
@@ -895,8 +942,10 @@ const FlutterAIAgent = (function () {
         }
       });
 
-      // Clipboard Paste Screenshot Listener (Ctrl+V)
+      // Clipboard Paste Screenshot Listener (Ctrl+V) — disabled until
+      // image/vision chat is re-enabled.
       input.addEventListener('paste', (e) => {
+        if (!state.imageEnabled) return;
         const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
         if (!items) return;
         for (const item of items) {
@@ -939,9 +988,11 @@ const FlutterAIAgent = (function () {
 
     stopGeneration() {
       if (state.abortController) {
+        state.isStopped = true;
         state.abortController.abort();
         state.abortController = null;
         state.loading = false;
+        updateChatControls();
         if (window.App && App.showToast) App.showToast('Generation stopped.', 'info');
       }
     },

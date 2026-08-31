@@ -181,7 +181,7 @@ async function executeToolCall(toolName, rawArgs = {}, isPro = false) {
         type: 'pro_features',
         plans: [
           { name: 'Monthly Pass', price: '₹29 / month', period: 'monthly' },
-          { name: 'Yearly Pass', price: '₹199 / year', period: 'yearly', discount: 'Save 42%' },
+          { name: 'Yearly Pass', price: '₹299 / year', period: 'yearly', discount: 'Save 14%' },
         ],
         benefits: [
           'Access to 1,000+ Flutter UI Component Source Codes',

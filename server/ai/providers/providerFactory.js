@@ -5,6 +5,7 @@
 
 const OpenAIProvider = require('./OpenAIProvider');
 const GeminiProvider = require('./GeminiProvider');
+const AnthropicProvider = require('./AnthropicProvider');
 const SmartFallbackProvider = require('./SmartFallbackProvider');
 
 function getAIProvider() {
@@ -22,7 +23,15 @@ function getAIProvider() {
     if (gemini.isConfigured()) return gemini;
   }
 
-  // 3. Resilient fallback provider
+  // 3. If explicitly Anthropic (or AI_API_KEY) and ANTHROPIC_API_KEY is present.
+  //    Works with Anthropic directly or an Anthropic-compatible router via
+  //    ANTHROPIC_BASE_URL (e.g. the co.agentrouter.org proxy).
+  if (preferred === 'anthropic' || process.env.ANTHROPIC_API_KEY) {
+    const anthropic = new AnthropicProvider();
+    if (anthropic.isConfigured()) return anthropic;
+  }
+
+  // 4. Resilient fallback provider (offline Flutter/Dart knowledge base)
   return new SmartFallbackProvider();
 }
 

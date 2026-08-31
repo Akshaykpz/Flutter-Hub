@@ -184,7 +184,7 @@ const NetworkManager = {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       // Ping lightweight health endpoint with cache busting
       const response = await fetch(`/api/health?_t=${Date.now()}`, {
@@ -196,8 +196,12 @@ const NetworkManager = {
       clearTimeout(timeoutId);
       return response.ok;
     } catch (e) {
-      // If local server endpoint fails or is unreachable, check navigator.onLine as fallback
-      return typeof navigator !== 'undefined' ? navigator.onLine : false;
+      // Only trust navigator.onLine when the fetch actually failed for a
+      // network-level reason; even then navigator.onLine can be inaccurate,
+      // so treat an unknown state as "online" rather than blocking the user.
+      if (e && e.name === 'AbortError') return true;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+      return true;
     }
   },
 

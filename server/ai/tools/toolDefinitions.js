@@ -120,7 +120,7 @@ const OPENAI_TOOLS = [
     type: 'function',
     function: {
       name: 'getProFeatures',
-      description: 'Retrieve Flutter Hub Pro subscription pricing, plans (₹29/month or ₹199/year), and benefits list (1,000+ UI components, full package directory, unlimited AI, commercial license). Use when the user asks what Pro includes or subscription details.',
+      description: 'Retrieve Flutter Hub Pro subscription pricing, plans (₹29/month or ₹299/year), and benefits list (1,000+ UI components, full package directory, unlimited AI, commercial license). Use when the user asks what Pro includes or subscription details.',
       parameters: {
         type: 'object',
         properties: {},

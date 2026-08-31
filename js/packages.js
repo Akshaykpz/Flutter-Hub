@@ -89,32 +89,48 @@ const PackagesView = (function () {
     });
     if (state.searchQuery) params.set('q', state.searchQuery);
 
+    const candidates = [
+      `/api/packages?${params}`,
+      `http://localhost:5000/api/packages?${params}`,
+      `http://localhost:5001/api/packages?${params}`
+    ];
+
+    let fetchedData = null;
+
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, {
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.packages)) {
+            fetchedData = data;
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+
     try {
-      const res = await fetch(`/api/packages?${params}`, {
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() }
-      });
+      if (fetchedData) {
+        state.isPro        = fetchedData.is_pro || userIsPro;
+        state.totalCatalog = fetchedData.pagination?.total_catalog || 0;
+        state.total        = fetchedData.pagination?.total || 0;
+        state.hasMore      = fetchedData.pagination?.has_more || false;
+        state.lockedTeasers = fetchedData.locked_teasers || [];
 
-      if (!res.ok) throw new Error(`Server returned status ${res.status}`);
-      const data = await res.json();
+        if (append) {
+          state.packages = [...state.packages, ...(fetchedData.packages || [])];
+        } else {
+          state.packages = fetchedData.packages || [];
+        }
 
-      if (!data.success) throw new Error(data.message || 'API failed to load packages');
-
-      state.isPro        = data.is_pro || userIsPro;
-      state.totalCatalog = data.pagination?.total_catalog || 0;
-      state.total        = data.pagination?.total || 0;
-      state.hasMore      = data.pagination?.has_more || false;
-      state.lockedTeasers = data.locked_teasers || [];
-
-      if (append) {
-        state.packages = [...state.packages, ...(data.packages || [])];
+        state.error = null;
       } else {
-        state.packages = data.packages || [];
+        throw new Error('All package endpoints offline, using local fallback dataset');
       }
-
-      state.error = null;
-
     } catch (err) {
-      console.warn('[PackagesView] API fetch notice:', err.message);
 
       if (window.PACKAGES_DATA && PACKAGES_DATA.packages && PACKAGES_DATA.packages.length > 0) {
         let list = [...PACKAGES_DATA.packages];

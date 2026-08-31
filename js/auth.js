@@ -75,7 +75,17 @@ const AuthManager = {
   getOAuthClient: function () {
     if (!window.supabase) return null;
     if (!this.oauthClient) {
-      this.oauthClient = window.supabase.createClient('https://yseyqbiiptripgjuoiyh.supabase.co', 'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN');
+      // NOTE: This is the PUBLIC Supabase anon/publishable key, which is
+      // specifically designed to be embedded in browser client code. It is NOT
+      // a secret. The service-role secret key only lives in the server .env
+      // (SUPABASE_SECRET_KEY) and is never shipped to the client.
+      // PKCE flow is used so the OAuth callback returns a short-lived ?code=
+      // that we exchange serverlessly, keeping tokens out of the URL hash.
+      this.oauthClient = window.supabase.createClient(
+        'https://yseyqbiiptripgjuoiyh.supabase.co',
+        'sb_publishable_lT3PX7OyROE90OK-wn8cIA_nTtOn8wN',
+        { auth: { flowType: 'pkce', autoRefreshToken: true, persistSession: true, detectSessionInUrl: true } }
+      );
     }
     return this.oauthClient;
   },
@@ -159,88 +169,153 @@ const AuthManager = {
 
   handleOAuthCallback: async function () {
     if (!window.supabase) {
-      this.authInitializing = false;
-      this.updateUI();
+      this.finishAuthInit();
       return;
     }
 
+    const client = this.getOAuthClient();
+    if (!client) {
+      this.finishAuthInit();
+      return;
+    }
+
+    const href = window.location.href || '';
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+
     try {
-      const client = this.getOAuthClient();
-      if (!client) return;
+      // 1. Handle OAuth provider errors such as the user cancelling the
+      //    Google account chooser (error=access_denied). Detect them early and
+      //    give the user clear feedback instead of silently leaving the UI
+      //    stuck on "Signing in...".
+      const urlParams = new URLSearchParams(search);
+      const oauthError = urlParams.get('error') || urlParams.get('error_code') || urlParams.get('error_description');
+      if (oauthError) {
+        const combined = (oauthError + ' ' + (urlParams.get('error_description') || '')).toLowerCase();
+        const isCancelled = /\b(access_denied|user_cancelled|cancelled|canceled)\b/.test(combined);
+        this.finishAuthInit();
+        this.cleanOAuthUrl(search, hash);
+        if (window.App && App.showToast) {
+          App.showToast(
+            isCancelled
+              ? 'ℹ️ Google sign-in was cancelled.'
+              : '❌ Google sign-in failed: ' + this.escapeHTML(oauthError),
+            isCancelled ? 'info' : 'error'
+          );
+        }
+        return;
+      }
 
-      const href = window.location.href || '';
-      const hash = window.location.hash || '';
-      const search = window.location.search || '';
+      // 2. Trust the SDK to resolve any session in this URL (PKCE ?code= or
+      //    legacy #access_token). This is the robust single path for redirects.
+      const { data: sessionData, error: sessionError } = await client.auth.getSession();
+      if (sessionError) {
+        console.warn('Supabase session restore notice:', sessionError.message);
+        this.finishAuthInit();
+        this.cleanOAuthUrl(search, hash);
+        if (window.App && App.showToast) {
+          App.showToast('⚠️ Your Google session could not be verified. Please try signing in again.', 'error');
+        }
+        this.subscribeToAuthState(client);
+        return;
+      }
 
-      // 1. Handle PKCE code parameter (?code=...)
-      if (search.includes('code=')) {
-        const urlParams = new URLSearchParams(search);
-        const code = urlParams.get('code');
-        if (code) {
-          try {
-            const { data, error } = await client.auth.exchangeCodeForSession(code);
-            if (data?.session?.user) {
-              await this.syncSupabaseUserSession(data.session.user);
-              return;
-            }
-          } catch (e) {
-            console.warn("PKCE code exchange notice:", e.message);
+      if (sessionData?.session?.user) {
+        await this.syncSupabaseUserSession(sessionData.session.user);
+        this.cleanOAuthUrl(search, hash);
+        this.subscribeToAuthState(client);
+        return;
+      }
+
+      // 3. If the SDK did not auto-resolve (e.g. code verifier was missing after
+      //    a hard reload), try a manual PKCE code exchange.
+      const code = urlParams.get('code');
+      if (code) {
+        try {
+          const { data: exData, error: exError } = await client.auth.exchangeCodeForSession(code);
+          if (exError) throw new Error(exError.message || 'Code exchange failed');
+          if (exData?.session?.user) {
+            await this.syncSupabaseUserSession(exData.session.user);
+            this.cleanOAuthUrl(search, hash);
+            this.subscribeToAuthState(client);
+            return;
           }
+        } catch (e) {
+          console.warn('PKCE code exchange notice:', e.message);
         }
       }
 
-      // 2. Handle hash fragments containing access_token= (including legacy double hash URLs)
+      // 4. Generic fallback for legacy #access_token URLs.
       if (href.includes('access_token=')) {
         const tokenString = href.substring(href.indexOf('access_token='));
-        const params = new URLSearchParams(tokenString);
-        const accessToken = params.get('access_token');
-
+        const accessParams = new URLSearchParams(tokenString);
+        const accessToken = accessParams.get('access_token');
         if (accessToken) {
           try {
-            const { data, error } = await client.auth.getUser(accessToken);
-            if (data?.user) {
-              await this.syncSupabaseUserSession(data.user);
+            const { data: uData, error: uError } = await client.auth.getUser(accessToken);
+            if (!uError && uData?.user) {
+              await this.syncSupabaseUserSession(uData.user);
+              this.cleanOAuthUrl(search, hash);
+              this.subscribeToAuthState(client);
               return;
             }
           } catch (e) {
-            console.warn("Access token user fetch notice:", e.message);
+            console.warn('Access token user fetch notice:', e.message);
           }
         }
       }
 
-      // 3. Restore session from active Supabase client on load / redirect
-      const getSessionRes = await client.auth.getSession();
-      if (getSessionRes?.data?.session?.user) {
-        await this.syncSupabaseUserSession(getSessionRes.data.session.user);
-      } else {
-        this.authInitializing = false;
-        this.updateUI();
-        sessionStorage.removeItem('flutterhub_oauth_pending');
-      }
-
-      // 4. Subscribe to auth state changes — store subscription so we can unsubscribe on logout
-      const { data: authListenerData } = client.auth.onAuthStateChange(async (event, session) => {
-        // Ignore events during/after logout to prevent re-login from cached Supabase session
-        if (this._loggingOut) return;
-
-        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
-          await this.syncSupabaseUserSession(session.user);
-        } else if (event === 'SIGNED_OUT') {
-          // Supabase confirms sign-out; make sure local state is cleared
-          if (this.currentUser) {
-            this.currentUser = null;
-            localStorage.removeItem('flutterhub_user');
-            this.updateUI();
-          }
-        }
-      });
-      this._authSubscription = authListenerData?.subscription;
+      this.finishAuthInit();
+      this.cleanOAuthUrl(search, hash);
     } catch (err) {
-      console.warn("Supabase Auth listener notice:", err.message);
-      this.authInitializing = false;
-      this.updateUI();
-      sessionStorage.removeItem('flutterhub_oauth_pending');
+      console.warn('Supabase Auth callback notice:', err.message);
+      this.finishAuthInit();
+      this.cleanOAuthUrl(search, hash);
+      if (window.App && App.showToast) {
+        App.showToast('⚠️ Google sign-in could not complete due to an unexpected error. Please try again.', 'error');
+      }
     }
+
+    this.subscribeToAuthState(client);
+  },
+
+  // Clean helper: clear the "restoring OAuth session" state and reset the UI.
+  finishAuthInit: function () {
+    this.authInitializing = false;
+    this.updateUI();
+    sessionStorage.removeItem('flutterhub_oauth_pending');
+  },
+
+  // Remove OAuth code/token query/hash fragments from the URL so they are never
+  // reused or left lingering after the callback has been processed.
+  cleanOAuthUrl: function (search, hash) {
+    if (!search && !hash) return;
+    const hasAuthParam =
+      search.includes('code=') || search.includes('error=') ||
+      search.includes('access_token=') || hash.includes('access_token=');
+    if (!hasAuthParam) return;
+    history.replaceState(null, '', window.location.pathname);
+  },
+
+  // Subscribe to Supabase auth state changes so sign-in/sign-out are reflected
+  // in the UI even when triggered from another tab/session.
+  subscribeToAuthState: function (client) {
+    if (!client || this._authSubscription) return;
+    const { data: authListenerData } = client.auth.onAuthStateChange(async (event, session) => {
+      // Ignore events during/after logout to prevent re-login from cached Supabase session
+      if (this._loggingOut) return;
+
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        await this.syncSupabaseUserSession(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        if (this.currentUser) {
+          this.currentUser = null;
+          localStorage.removeItem('flutterhub_user');
+          this.updateUI();
+        }
+      }
+    });
+    this._authSubscription = authListenerData?.subscription;
   },
 
   saveSession: function () {
@@ -413,6 +488,96 @@ const AuthManager = {
     });
   },
 
+  // Fetch with a configurable timeout so slow/unreachable backends fail cleanly
+  // instead of hanging or being misinterpreted as "no internet".
+  fetchApi: async function (url, options = {}, timeoutMs = 30000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+
+  // Classify every failure into an accurate, user-friendly category so we never
+  // wrongly blame the user's internet connection for a server-side problem.
+  classifyApiError: function (err, res, fallbackMsg = '') {
+    const msg = fallbackMsg || (err && err.message ? String(err.message) : '');
+    const msgLower = msg.toLowerCase();
+
+    // 1. The backend responded with an HTTP status -> trust it.
+    if (res) {
+      const status = res.status;
+      if (status === 400) {
+        if (msgLower.includes('already exist') || msgLower.includes('already registered')) {
+          return { type: 'email_exists', message: msg || 'An account with this email already exists.' };
+        }
+        return { type: 'invalid_request', message: msg || 'Please check the details you entered.' };
+      }
+      if (status === 401) return { type: 'auth_failed', message: msg || 'Invalid email or password.' };
+      if (status === 403) return { type: 'forbidden', message: msg || 'You are not authorized to perform this action.' };
+      if (status === 409) return { type: 'email_exists', message: msg || 'An account with this email already exists.' };
+      if (status === 429) return { type: 'rate_limited', message: msg || 'Too many requests. Please try again in a moment.' };
+      if (status >= 500) return { type: 'server', message: msg || 'The server hit an error. Please try again in a moment.' };
+    }
+
+    // 2. Request timed out (AbortController).
+    if (err && err.name === 'AbortError') {
+      return { type: 'timeout', message: 'The request timed out. Please check your connection and try again.' };
+    }
+
+    // 3. fetch-level network failure (TypeError: Failed to fetch).
+    if (err instanceof TypeError &&
+        (msgLower.includes('fetch') || msgLower.includes('network') ||
+         msgLower.includes('load') || msgLower.includes('failed'))) {
+      const trulyOffline = typeof navigator === 'undefined' ? false : navigator.onLine === false;
+      if (trulyOffline) {
+        return { type: 'offline', message: 'You are offline. Please check your internet connection.' };
+      }
+      // We have internet (or it is unknown) but could not reach the server.
+      return { type: 'server_unreachable', message: 'The service is temporarily unreachable. Please wait a moment and try again.' };
+    }
+
+    // 4. Backend returned a non-JSON body (proxy/gateway error like 502/504).
+    if (msgLower.includes('json') || msgLower.includes('unexpected token') || msgLower.includes('unexpected end')) {
+      return { type: 'server', message: 'The server returned an unexpected response. Please try again in a moment.' };
+    }
+
+    return { type: 'unknown', message: msg || 'An unexpected error occurred. Please try again.' };
+  },
+
+  renderApiError: function (res, fallbackMsg, actionLabel) {
+    if (typeof App === 'undefined' || !App.showToast) return;
+    const label = actionLabel || 'this action';
+    const err = this.classifyApiError(null, res, fallbackMsg);
+    const icon = {
+      offline: '📡',
+      timeout: '⏱️',
+      server: '🛠️',
+      server_unreachable: '🔌',
+      email_exists: '⚠️',
+      invalid_request: '⚠️',
+      auth_failed: '🔒',
+      rate_limited: '⏳',
+      forbidden: '🚫',
+      unknown: '⚠️',
+    }[err.type] || '⚠️';
+
+    let toast = err.message;
+    if (err.type === 'server' || err.type === 'server_unreachable') {
+      toast = `⚠️ ${label} failed because a server-side issue occurred: ${err.message}`;
+    } else if (err.type === 'timeout') {
+      toast = `⏱️ ${label} timed out. Please try again.`;
+    } else if (!toast.startsWith('⚠️') && !toast.startsWith('📡')) {
+      toast = `${err.type === 'offline' ? '📡' : '⚠️'} ${toast}`;
+    }
+    App.showToast(toast, 'error');
+  },
+
   handleModalLoginSubmit: async function (e) {
     e.preventDefault();
     const email = document.getElementById('modal-login-email')?.value.trim();
@@ -438,25 +603,23 @@ const AuthManager = {
       return;
     }
 
-    if (window.NetworkManager && !window.NetworkManager.isOnline) {
-      App.showToast('⚠️ You are currently offline. Please connect to the internet to sign in.', 'error');
-      return;
-    }
-
     if (btn) {
       btn.disabled = true;
       btn.innerText = 'Signing in...';
     }
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await this.fetchApi('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Unable to sign in.');
+      let json = null;
+      try { json = await res.json(); } catch (_) { /* non-JSON body handled below */ }
+
+      if (!res.ok) {
+        this.renderApiError(res, (json && json.message) || 'Unable to sign in.', 'Sign in');
+        return;
       }
 
       this.setCurrentUser(json.data, { email, name: email.split('@')[0] });
@@ -464,11 +627,7 @@ const AuthManager = {
       App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
       App.switchView(this.currentUser.isAdmin ? 'admin-dashboard' : 'home');
     } catch (err) {
-      if (!navigator.onLine || (err.message && err.message.includes('fetch'))) {
-        App.showToast('⚠️ Connection error. Please check your internet connection and try again.', 'error');
-      } else {
-        App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
-      }
+      this.renderApiError(err, '', 'Sign in');
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -490,37 +649,31 @@ const AuthManager = {
       return;
     }
 
-    if (window.NetworkManager && !window.NetworkManager.isOnline) {
-      App.showToast('⚠️ You are currently offline. Please connect to the internet to create an account.', 'error');
-      return;
-    }
-
     if (btn) {
       btn.disabled = true;
       btn.innerText = 'Creating account...';
     }
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await this.fetchApi('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })
       });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Unable to create account.');
+      let json = null;
+      try { json = await res.json(); } catch (_) { /* non-JSON body handled below */ }
+
+      if (!res.ok) {
+        this.renderApiError(res, (json && json.message) || 'Unable to create account.', 'Account creation');
+        return;
       }
 
       this.setCurrentUser(json.data, { name, email });
       this.closeAuthModal();
-      App.showToast('Account created and saved in Supabase.', 'success');
+      App.showToast('🎉 Account created successfully! Welcome to FlutterHub!', 'success');
       App.switchView('user-dashboard');
     } catch (err) {
-      if (!navigator.onLine || (err.message && err.message.includes('fetch'))) {
-        App.showToast('⚠️ Connection error. Please check your internet connection and try again.', 'error');
-      } else {
-        App.showToast(err.message || 'Signup failed. Please try again.', 'error');
-      }
+      this.renderApiError(err, '', 'Account creation');
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -726,36 +879,30 @@ const AuthManager = {
       return;
     }
 
-    if (window.NetworkManager && !window.NetworkManager.isOnline) {
-      App.showToast('⚠️ You are currently offline. Please connect to the internet to sign in.', 'error');
-      return;
-    }
-
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Authenticating...`;
     }
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await this.fetchApi('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Unable to sign in.');
+      let json = null;
+      try { json = await res.json(); } catch (_) { /* non-JSON body handled below */ }
+
+      if (!res.ok) {
+        this.renderApiError(res, (json && json.message) || 'Unable to sign in.', 'Sign in');
+        return;
       }
 
       this.setCurrentUser(json.data, { email, name: email.split('@')[0] });
       App.showToast(`Welcome back, ${this.currentUser.name}!`, 'success');
       App.switchView(this.currentUser.isAdmin ? 'admin-dashboard' : 'home');
     } catch (err) {
-      if (!navigator.onLine || (err.message && err.message.includes('fetch'))) {
-        App.showToast('⚠️ Connection error. Please check your internet connection and try again.', 'error');
-      } else {
-        App.showToast(err.message || 'Sign in failed. Please try again.', 'error');
-      }
+      this.renderApiError(err, '', 'Sign in');
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -790,36 +937,30 @@ const AuthManager = {
       return;
     }
 
-    if (window.NetworkManager && !window.NetworkManager.isOnline) {
-      App.showToast('⚠️ You are currently offline. Please connect to the internet to create an account.', 'error');
-      return;
-    }
-
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Creating Account...`;
     }
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await this.fetchApi('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })
       });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Unable to create account.');
+      let json = null;
+      try { json = await res.json(); } catch (_) { /* non-JSON body handled below */ }
+
+      if (!res.ok) {
+        this.renderApiError(res, (json && json.message) || 'Unable to create account.', 'Account creation');
+        return;
       }
 
       this.setCurrentUser(json.data, { name, email });
       App.showToast('Account created and saved in Supabase.', 'success');
       App.switchView('home');
     } catch (err) {
-      if (!navigator.onLine || (err.message && err.message.includes('fetch'))) {
-        App.showToast('⚠️ Connection error. Please check your internet connection and try again.', 'error');
-      } else {
-        App.showToast(err.message || 'Signup failed. Please try again.', 'error');
-      }
+      this.renderApiError(err, '', 'Account creation');
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -967,8 +1108,9 @@ const AuthManager = {
   loginWithGoogle: async function () {
     if (this.authInitializing) return;
 
-    if (window.NetworkManager && !window.NetworkManager.isOnline) {
-      App.showToast('⚠️ Internet connection required for Google sign-in. Please reconnect and try again.', 'error');
+    // If the user is already authenticated, avoid triggering a duplicate flow.
+    if (this.currentUser) {
+      App.showToast(`You are already signed in as ${this.currentUser.name}.`, 'info');
       return;
     }
 
@@ -996,43 +1138,27 @@ const AuthManager = {
             }
           });
           if (!error && data?.url) {
+            // Persist the pending intent so the callback can restore the flow
+            // even if the tab is closed and reopened after Google returns.
+            sessionStorage.setItem('flutterhub_oauth_pending', 'google');
             window.location.href = data.url;
             return;
+          }
+          if (error) {
+            console.warn("Supabase Google OAuth error:", error.message);
           }
         }
       } catch (err) {
         console.warn("Supabase Google OAuth notice:", err.message);
+        this.finishAuthInit();
+        App.showToast('⚠️ Google sign-in failed due to a connection problem. Please check your internet and try again.', 'error');
+        return;
       }
     }
 
-    this.authInitializing = false;
-    sessionStorage.removeItem('flutterhub_oauth_pending');
-    this.updateUI();
-    App.showToast('ℹ️ Google OAuth not configured in Supabase Dashboard. Logging in via developer profile.', 'info');
-    try {
-      const syncRes = await fetch('/api/auth/oauth-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: crypto.randomUUID(),
-          name: 'Google Developer',
-          email: 'user.google@flutterhub.dev',
-          avatar: 'G',
-          provider: 'google'
-        })
-      });
-      const syncJson = await syncRes.json();
-      if (syncJson.success) {
-        this.setCurrentUser(syncJson.data);
-      } else {
-        this.login('user.google@flutterhub.dev', 'Google Developer');
-      }
-    } catch (e) {
-      this.login('user.google@flutterhub.dev', 'Google Developer');
-    }
-
-    this.closeAuthModal();
-    App.switchView('user-dashboard');
+    // No supabase SDK / no OAuth URL produced — give a clear, actionable error.
+    this.finishAuthInit();
+    App.showToast('❌ Google Sign-In failed. The authentication service is temporarily unreachable. Please use email/password to sign in.', 'error');
   },
 
   loginWithGitHub: async function () {

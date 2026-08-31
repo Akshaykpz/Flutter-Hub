@@ -162,9 +162,13 @@ router.post('/chat/stream', async (req, res) => {
     res.end();
 
   } catch (err) {
-    console.error('[AIChatStream] Error:', err.message);
-    res.write(`data: ${JSON.stringify({ type: 'error', message: err.message })}\n\n`);
-    res.end();
+    console.error('[AIChatStream] Error:', err);
+    const friendly = 'I couldn\u2019t process that request right now. Please try again.';
+    try {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: friendly })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'done', success: false })}\n\n`);
+      res.end();
+    } catch (_) { /* headers already gone — nothing else to do */ }
   }
 });
 
@@ -217,11 +221,10 @@ router.post('/chat', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[AIChatJSON] Error:', err.message);
+    console.error('[AIChatJSON] Error:', err);
     res.status(500).json({
       success: false,
-      message: 'Failed to process AI query. Please try again.',
-      error: err.message,
+      message: 'I couldn\u2019t process that request right now. Please try again.',
     });
   }
 });
@@ -245,8 +248,11 @@ router.post('/analyze-image', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[AIAnalyzeImage] Error:', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.error('[AIAnalyzeImage] Error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Image analysis is unavailable right now. Please try again later.',
+    });
   }
 });
 

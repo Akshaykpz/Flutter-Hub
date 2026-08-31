@@ -1,12 +1,17 @@
 /* ==========================================================================
    User Authentication & Supabase Database Sync Controller
-   Matching Exact Supabase Table Schema: [id, created_at, name, email, password]
+   ─────────────────────────────────────────────────────────────────────────
+   When Supabase is unreachable (paused project, DNS failure, network outage)
+   the controller automatically falls back to LocalUserStore — a local JSON
+   file at server/data/local_users.json — so registration and login keep
+   working. Once Supabase is restored, new users can be migrated.
    ========================================================================== */
 
 const supabase = require('../config/supabase');
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
 const couponController = require('./couponController');
+const LocalUserStore = require('../utils/localUserStore');
 
 // Logger helper for formatted terminal / debug console output
 const logTime = () => new Date().toISOString();
@@ -15,6 +20,23 @@ const logAuth = (action, message) => {
 };
 const logDb = (action, message) => {
   console.log(`\x1b[32m[${logTime()}] ⚡ [SUPABASE DB ${action}]:\x1b[0m ${message}`);
+};
+
+// Map raw fetch/DNS errors to user-friendly messages
+const friendlyError = (error) => {
+  const msg = (error.message || error.name || '').toLowerCase();
+  if (
+    msg.includes('fetch failed') ||
+    msg.includes('enotfound') ||
+    msg.includes('econnrefused') ||
+    msg.includes('network') ||
+    msg.includes('getaddrinfo') ||
+    msg.includes('dns') ||
+    msg.includes('timeout')
+  ) {
+    return 'Database service is temporarily unavailable. Please try again in a moment.';
+  }
+  return error.message || 'An unexpected error occurred.';
 };
 
 // Helper to convert DB user record to standardized client user object
@@ -40,6 +62,7 @@ const toClientUser = (user) => {
 };
 
 // @desc    Register a new user in Supabase Auth & Users database table
+//          Falls back to LocalUserStore when Supabase is unreachable.
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
@@ -58,98 +81,121 @@ const registerUser = async (req, res) => {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // 1. Check if user already exists in Supabase users database table
-    const fetchStartTime = Date.now();
-    logDb('FETCH CHECK', `Checking if email "${cleanEmail}" exists in Supabase users table at ${logTime()}`);
+    // ── Try Supabase first ────────────────────────────────────────────────
+    let supabaseAvailable = false;
+    try {
+      const fetchStartTime = Date.now();
+      logDb('FETCH CHECK', `Checking if "${cleanEmail}" exists in Supabase...`);
 
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', cleanEmail)
-      .maybeSingle();
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', cleanEmail)
+        .maybeSingle();
 
-    logDb('FETCH CHECK DONE', `Check completed in ${Date.now() - fetchStartTime}ms. User exists: ${!!existingUser}`);
+      logDb('FETCH CHECK DONE', `Completed in ${Date.now() - fetchStartTime}ms`);
+      supabaseAvailable = true;
 
-    if (existingUser) {
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
+      }
+
+      // Register in Supabase Auth
+      let authUser = null;
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: { data: { name: name.trim() } },
+      });
+
+      if (authError) {
+        // If it's a connectivity error (signUp returned 'fetch failed'), fall back to local store
+        if (LocalUserStore.isConnectionError(authError)) {
+          throw authError; // caught below
+        }
+        logAuth('SIGN-UP NOTICE', `signUp notice: ${authError.message}. Trying admin fallback...`);
+        const { data: adminData, error: adminError } = await supabase.auth.admin.createUser({
+          email: cleanEmail,
+          password,
+          email_confirm: true,
+          user_metadata: { name: name.trim() }
+        });
+        if (adminError) {
+          // If admin call also fails with connectivity error, fall to local
+          if (LocalUserStore.isConnectionError(adminError)) {
+            throw adminError;
+          }
+          logAuth('SIGN-UP ERROR', `Supabase Auth error: ${adminError.message}`);
+          return res.status(400).json({ success: false, message: adminError.message || authError.message });
+        }
+        authUser = adminData?.user;
+      } else {
+        authUser = authData?.user;
+      }
+
+      const userId = authUser ? authUser.id : crypto.randomUUID();
+      const newUserRecord = {
+        id:         userId,
+        name:       name.trim(),
+        email:      cleanEmail,
+        created_at: new Date().toISOString(),
+      };
+
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .upsert([newUserRecord], { onConflict: 'id' })
+        .select()
+        .maybeSingle();
+
+      if (insertError) {
+        logDb('INSERT NOTICE', `RLS notice: ${insertError.message}`);
+      }
+
+      try { await couponController.assignWelcomeCoupon(userId, cleanEmail, name.trim()); } catch (_) {}
+
+      logAuth('SIGN-UP SUCCESS', `User "${cleanEmail}" registered in Supabase.`);
+      return res.status(201).json({
+        success: true,
+        message: 'Account created & saved successfully.',
+        data: toClientUser(newUser || newUserRecord),
+      });
+
+    } catch (supabaseError) {
+      if (!LocalUserStore.isConnectionError(supabaseError)) {
+        // Not a connectivity error — rethrow
+        throw supabaseError;
+      }
+      console.warn(`[Auth] ⚠️ Supabase unreachable (${supabaseError.message}) — falling back to LocalUserStore.`);
+    }
+
+    // ── Supabase unreachable: use local fallback ──────────────────────────
+    // Check local store for duplicate
+    const existingLocal = LocalUserStore.findByEmail(cleanEmail);
+    if (existingLocal) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
     }
 
-    // 2. Register user in Supabase Auth service
-    logAuth('SUPABASE AUTH SIGN-UP', `Creating Supabase Auth credentials for ${cleanEmail}...`);
-    let authUser = null;
-
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: cleanEmail,
-      password,
-      options: {
-        data: { name: name.trim() },
-      },
-    });
-
-    if (authError) {
-      const rawErrorMsg = authError.message || authError.name || 'Error creating auth user';
-      logAuth('SIGN-UP NOTICE', `Standard signUp notice: ${rawErrorMsg} (${authError.status || 500}). Attempting admin creation fallback...`);
-
-      // Fallback: Admin creation via Secret Key (bypasses SMTP email errors)
-      const { data: adminData, error: adminError } = await supabase.auth.admin.createUser({
-        email: cleanEmail,
-        password,
-        email_confirm: true,
-        user_metadata: { name: name.trim() }
-      });
-
-      if (adminError) {
-        logAuth('SIGN-UP ERROR', `Supabase Auth error: ${adminError.message || rawErrorMsg}`);
-        return res.status(400).json({
-          success: false,
-          message: adminError.message || rawErrorMsg,
-        });
-      }
-      authUser = adminData?.user;
-    } else {
-      authUser = authData?.user;
+    const localResult = LocalUserStore.register({ name, email: cleanEmail, password });
+    if (!localResult.success) {
+      return res.status(400).json({ success: false, message: localResult.message });
     }
 
-    const userId = authUser ? authUser.id : crypto.randomUUID();
-
-
-    const insertStartTime = Date.now();
-    const newUserRecord = {
-      id: userId,
-      name: name.trim(),
-      email: cleanEmail,
-      created_at: new Date().toISOString(),
-    };
-
-    logDb('INSERT DATA', `Adding user record to Supabase users table at ${newUserRecord.created_at} | ID: ${userId} | Email: ${cleanEmail}`);
-
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
-      .upsert([newUserRecord], { onConflict: 'id' })
-      .select()
-      .maybeSingle();
-
-    if (insertError) {
-      logDb('INSERT NOTICE', `Supabase users table RLS policy notice: ${insertError.message}. Using Auth user profile.`);
-    } else {
-      logDb('INSERT SUCCESS', `User record successfully saved in Supabase database in ${Date.now() - insertStartTime}ms! ID: ${userId}`);
-    }
-
-    // Auto-assign Welcome Scratch Coupon for new registration
-    await couponController.assignWelcomeCoupon(userId, cleanEmail, name.trim());
-
+    logAuth('SIGN-UP LOCAL', `User "${cleanEmail}" registered in LocalUserStore (Supabase offline).`);
     return res.status(201).json({
       success: true,
-      message: 'Account created & saved in Supabase database successfully.',
-      data: toClientUser(newUser || newUserRecord),
+      message: 'Account created successfully! (Sync pending — database will be updated when service restores.)',
+      data: toClientUser(localResult.user),
+      _local: true,
     });
+
   } catch (error) {
     console.error(`[${logTime()}] ❌ Registration Exception:`, error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: friendlyError(error) });
   }
 };
 
 // @desc    Authenticate user & sync with Supabase Users database table
+//          Falls back to LocalUserStore when Supabase is unreachable.
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
@@ -164,15 +210,15 @@ const loginUser = async (req, res) => {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // 0. Special Admin Verification (admin@admin.com / akshaykp@9072)
+    // 0. Special Admin Verification
     if (cleanEmail === 'admin@admin.com' && password === 'akshaykp@9072') {
       logAuth('ADMIN LOGIN VERIFIED', `Admin credentials matched for ${cleanEmail}`);
 
-      let { data: adminUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', cleanEmail)
-        .maybeSingle();
+      let adminUser = null;
+      try {
+        const { data } = await supabase.from('users').select('*').eq('email', cleanEmail).maybeSingle();
+        adminUser = data;
+      } catch (_) {}
 
       if (!adminUser) {
         const adminRecord = {
@@ -182,95 +228,89 @@ const loginUser = async (req, res) => {
           role: 'admin',
           created_at: new Date().toISOString(),
         };
-
-        const { data: insertedAdmin } = await supabase
-          .from('users')
-          .upsert([adminRecord], { onConflict: 'id' })
-          .select()
-          .maybeSingle();
-
-        adminUser = insertedAdmin || adminRecord;
+        try {
+          const { data } = await supabase.from('users').upsert([adminRecord], { onConflict: 'id' }).select().maybeSingle();
+          adminUser = data || adminRecord;
+        } catch (_) {
+          adminUser = adminRecord;
+        }
       }
 
       adminUser.role = 'admin';
-      const clientAdmin = toClientUser(adminUser);
-
       return res.json({
         success: true,
-        message: '👑 Admin Sign in Successful! Loading Admin Dashboard...',
-        data: clientAdmin,
+        message: '👑 Admin Sign in Successful!',
+        data: toClientUser(adminUser),
       });
     }
 
-    // 1. Authenticate credentials with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: cleanEmail,
-      password,
-    });
-
-    if (authError) {
-      logAuth('LOGIN FAILED', `Invalid credentials for ${cleanEmail}: ${authError.message || authError.name}`);
-      return res.status(401).json({
-        success: false,
-        message: authError.message || 'Invalid email or password.',
-      });
-    }
-
-    const authUser = authData?.user;
-    logAuth('LOGIN VERIFIED', `Supabase Auth verified at ${logTime()} | User ID: ${authUser?.id}`);
-
-    // 2. Query user profile from Supabase `users` database table
-    const fetchStartTime = Date.now();
-    logDb('FETCH PROFILE', `Fetching user profile for "${cleanEmail}" from Supabase users table at ${logTime()}`);
-
-    let { data: user } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', cleanEmail)
-      .maybeSingle();
-
-    logDb('FETCH PROFILE DONE', `Profile fetch completed in ${Date.now() - fetchStartTime}ms. Record found: ${!!user}`);
-
-    // 3. Auto-create profile in Supabase `users` table if missing
-    if (!user) {
-      const insertStartTime = Date.now();
-      const newUserRecord = {
-        id: authUser ? authUser.id : crypto.randomUUID(),
-        name: authUser?.user_metadata?.name || cleanEmail.split('@')[0],
+    // ── Try Supabase Auth first ───────────────────────────────────────────
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
-        created_at: new Date().toISOString(),
-      };
+        password,
+      });
 
-      logDb('AUTO-INSERT PROFILE', `Creating missing user profile in Supabase users table at ${newUserRecord.created_at} for ID: ${newUserRecord.id}`);
-
-      const { data: insertedUser, error: autoInsertError } = await supabase
-        .from('users')
-        .upsert([newUserRecord], { onConflict: 'id' })
-        .select()
-        .maybeSingle();
-
-      if (autoInsertError) {
-        logDb('AUTO-INSERT NOTICE', `Supabase users table RLS policy notice: ${autoInsertError.message}. Using Auth profile.`);
-      } else {
-        logDb('AUTO-INSERT SUCCESS', `Profile created in ${Date.now() - insertStartTime}ms.`);
+      if (authError) {
+        // If it's a credentials error (not a network error), return it directly
+        if (!LocalUserStore.isConnectionError(authError)) {
+          logAuth('LOGIN FAILED', `Invalid credentials for ${cleanEmail}: ${authError.message}`);
+          return res.status(401).json({ success: false, message: authError.message || 'Invalid email or password.' });
+        }
+        // Network error — fall through to local store
+        throw authError;
       }
 
-      user = insertedUser || newUserRecord;
+      // Supabase auth succeeded
+      const authUser = authData?.user;
+      logAuth('LOGIN VERIFIED', `Supabase Auth verified | User ID: ${authUser?.id}`);
+
+      let { data: user } = await supabase.from('users').select('*').eq('email', cleanEmail).maybeSingle();
+
+      if (!user && authUser) {
+        const newUserRecord = {
+          id:         authUser.id,
+          name:       authUser.user_metadata?.name || cleanEmail.split('@')[0],
+          email:      cleanEmail,
+          created_at: new Date().toISOString(),
+        };
+        try {
+          const { data } = await supabase.from('users').upsert([newUserRecord], { onConflict: 'id' }).select().maybeSingle();
+          user = data || newUserRecord;
+        } catch (_) {
+          user = newUserRecord;
+        }
+      }
+
+      try { await couponController.assignWelcomeCoupon(user.id, user.email, user.name); } catch (_) {}
+
+      logAuth('LOGIN SUCCESS', `User "${user?.name}" (${user?.email}) logged in via Supabase.`);
+      return res.json({ success: true, message: 'Sign in successful.', data: toClientUser(user) });
+
+    } catch (supabaseError) {
+      if (!LocalUserStore.isConnectionError(supabaseError)) {
+        throw supabaseError;
+      }
+      console.warn(`[Auth] ⚠️ Supabase unreachable (${supabaseError.message}) — falling back to LocalUserStore.`);
     }
 
-    logAuth('LOGIN SUCCESS', `User "${user.name}" (${user.email}) logged in successfully at ${logTime()}`);
+    // ── Supabase unreachable: check local store ───────────────────────────
+    const localResult = LocalUserStore.login({ email: cleanEmail, password });
+    if (!localResult.success) {
+      return res.status(401).json({ success: false, message: localResult.message });
+    }
 
-    // Ensure Welcome Scratch Coupon assigned on login
-    await couponController.assignWelcomeCoupon(user.id, user.email, user.name);
-
+    logAuth('LOGIN LOCAL', `User "${cleanEmail}" authenticated via LocalUserStore (Supabase offline).`);
     return res.json({
       success: true,
       message: 'Sign in successful.',
-      data: toClientUser(user),
+      data: toClientUser(localResult.user),
+      _local: true,
     });
+
   } catch (error) {
     console.error(`[${logTime()}] ❌ Login Exception:`, error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: friendlyError(error) });
   }
 };
 
